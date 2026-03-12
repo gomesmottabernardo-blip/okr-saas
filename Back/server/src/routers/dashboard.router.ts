@@ -1,16 +1,22 @@
-import { router, protectedProcedure } from "../trpc/trpc";
+import { router, publicProcedure } from "../trpc/trpc";
+import { prisma } from "../lib/prisma";
 import { getDashboard } from "../services/dashboard.service";
 
 export const dashboardRouter = router({
 
-  summary: protectedProcedure.query(async ({ ctx }) => {
+  summary: publicProcedure.query(async () => {
 
-    const companyId = ctx.user.companyId;
+    // pega a primeira empresa cadastrada no banco
+    const company = await prisma.company.findFirst();
 
-    const data = await getDashboard(companyId);
+    if (!company) {
+      throw new Error("No company found in database");
+    }
+
+    const data = await getDashboard(company.id);
 
     return data;
 
-  })
+  }),
 
 });

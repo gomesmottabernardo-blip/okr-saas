@@ -9,7 +9,7 @@ import { dashboardRouter } from "../routers/dashboard.router";
 import { clientRouter } from "../routers/client.router";
 import { okrRouter } from "../routers/okr.router";
 import { financialRouter } from "../routers/financial.router";
-import { dashboardRouter } from "../routers/dashboard.router";
+import { authRouter } from "../routers/auth.router";
 
 export const appRouter = router({
 
@@ -63,6 +63,8 @@ export const appRouter = router({
       return { token };
 
     }),
+
+  auth: authRouter,
 
   dashboard: dashboardRouter,
 
