@@ -1,0 +1,53 @@
+openapi: 3.0.0
+info:
+  title: API do Dashboard de OKRs
+  description: API para obter as métricas de progresso de Objectives e Key Results do projeto.
+  version: 1.0.0
+servers:
+  - url: https://<URL_A_SER_FORNECIDA_PELO_MANUS>.manusvm.computer
+    description: Servidor de desenvolvimento do Manus
+paths:
+  /metrics:
+    get:
+      summary: Obtém as métricas de OKRs
+      description: Retorna uma lista agregada de métricas para cada Objetivo, incluindo o progresso e os Key Results associados.
+      operationId: getOkrMetrics
+      responses:
+        '200':
+          description: Sucesso. Retorna as métricas calculadas.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  metrics:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        objectiveName:
+                          type: string
+                          example: "Lançar novo produto"
+                        percentage: 
+                          type: number
+                          example: 65
+                        keyResults:
+                          type: array
+                          items:
+                            type: object
+                            properties:
+                              name:
+                                type: string
+                                example: "Desenvolver MVP"
+                              percentage:
+                                type: number
+                                example: 80
+components:
+  securitySchemes:
+    apiKey:
+      type: apiKey
+      in: header
+      name: X-API-Key
+security:
+  - apiKey: []
+      []

@@ -1,0 +1,85 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Company {
+  id        String   @id @default(uuid())
+  name      String
+  slug      String   @unique
+
+  users     User[]
+  clients   Client[]
+  okrs      OKR[]
+  financialTransactions FinancialTransaction[]
+
+  createdAt DateTime @default(now())
+}
+
+model User {
+  id        String   @id @default(uuid())
+  email     String
+  password  String
+  role      String
+
+  companyId String
+  company   Company @relation(fields: [companyId], references: [id])
+
+  createdAt DateTime @default(now())
+}
+
+model Client {
+  id           String   @id @default(uuid())
+  name         String
+  service      String
+  monthlyValue Float
+  startDate    DateTime
+  active       Boolean  @default(true)
+
+  companyId String
+  company   Company @relation(fields: [companyId], references: [id])
+
+  createdAt DateTime @default(now())
+}
+
+model OKR {
+  id          String   @id @default(uuid())
+  title       String
+  description String?
+
+  companyId String
+  company   Company @relation(fields: [companyId], references: [id])
+
+  keyResults KeyResult[]
+
+  createdAt DateTime @default(now())
+}
+
+model KeyResult {
+  id      String  @id @default(uuid())
+  title   String
+  target  Float
+  current Float   @default(0)
+
+  okrId String
+  okr   OKR @relation(fields: [okrId], references: [id])
+}
+
+model FinancialTransaction {
+  id          String   @id @default(uuid())
+
+  description String
+  type        String
+  amount      Float
+  date        DateTime
+  clientName  String?
+
+  companyId String
+  company   Company @relation(fields: [companyId], references: [id])
+
+  createdAt DateTime @default(now())
+}
