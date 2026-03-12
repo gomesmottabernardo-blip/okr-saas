@@ -6,9 +6,6 @@ export async function getCompanyMetrics(companyId: string) {
   const clients = await prisma.client.findMany({
     where: {
       companyId
-    },
-    include: {
-      invoices: true
     }
   })
 
@@ -36,19 +33,8 @@ export async function getCompanyMetrics(companyId: string) {
 
   const margin = revenue === 0 ? 0 : (profit / revenue) * 100
 
-  let totalLTV = 0
-
-  clients.forEach(client => {
-
-    const clientRevenue = client.invoices.reduce((sum, inv) => {
-      return sum + inv.amount
-    }, 0)
-
-    totalLTV += clientRevenue
-
-  })
-
-  const avgLTV = clients.length === 0 ? 0 : totalLTV / clients.length
+  // LTV estimado baseado em ticket médio * 12 meses
+  const avgLTV = avgTicket * 12
 
   const marginPerClient = activeClients === 0 ? 0 : profit / activeClients
 
