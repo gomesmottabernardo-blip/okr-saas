@@ -6,16 +6,15 @@ export const dashboardRouter = router({
 
   summary: publicProcedure.query(async () => {
 
-    // pega a primeira empresa cadastrada no banco
     const company = await prisma.company.findFirst();
 
     if (!company) {
       throw new Error("No company found in database");
     }
 
-    const dashboard = await getDashboard(company.id);
+    const data = await getDashboard(company.id);
 
-    return dashboard;
+    return data;
 
   }),
 
