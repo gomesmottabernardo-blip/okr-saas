@@ -1,5 +1,5 @@
-import { Request, Response } from 'express';
-import { verifyToken } from '../auth/jwt';
+import { Request, Response } from "express";
+import jwt from "jsonwebtoken";
 
 export interface Context {
   req: Request;
@@ -17,22 +17,35 @@ export const createContext = ({
   req: Request;
   res: Response;
 }): Context => {
+
   const authHeader = req.headers.authorization;
 
-  let user;
-
-  if (authHeader && authHeader.startsWith('Bearer ')) {
-    const token = authHeader.split(' ')[1];
-    const payload = verifyToken(token);
-
-    if (payload) {
-      user = payload;
-    }
+  if (!authHeader) {
+    return { req, res };
   }
 
-  return {
-    req,
-    res,
-    user,
-  };
+  const token = authHeader.split(" ")[1];
+
+  try {
+
+    const payload = jwt.verify(
+      token,
+      process.env.JWT_SECRET!
+    ) as {
+      userId: string;
+      companyId: string;
+    };
+
+    return {
+      req,
+      res,
+      user: payload,
+    };
+
+  } catch {
+
+    return { req, res };
+
+  }
+
 };
