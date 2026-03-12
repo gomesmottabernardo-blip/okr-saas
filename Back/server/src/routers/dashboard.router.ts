@@ -3,19 +3,19 @@ import { prisma } from "../lib/prisma";
 import { getDashboard } from "../services/dashboard.service";
 
 export const dashboardRouter = router({
-
   summary: publicProcedure.query(async () => {
 
+    // pega a primeira empresa cadastrada
     const company = await prisma.company.findFirst();
 
     if (!company) {
-      throw new Error("No company found in database");
+      throw new Error("No company found");
     }
 
-    const data = await getDashboard(company.id);
+    // gera dashboard
+    const dashboard = await getDashboard(company.id);
 
-    return data;
+    return dashboard;
 
   }),
-
 });
