@@ -1,43 +1,49 @@
-import { Request, Response } from "express"
-import jwt from "jsonwebtoken"
+import { Request, Response } from "express";
+import jwt from "jsonwebtoken";
 
 export type UserPayload = {
-  userId: string
-  companyId: string
-}
+  userId: string;
+  companyId: string;
+};
 
 export type Context = {
-  req: Request
-  res: Response
-  user?: UserPayload
-}
+  req: Request;
+  res: Response;
+  user?: UserPayload;
+};
 
-export function createContext({ req, res }: { req: Request; res: Response }): Context {
+export function createContext({
+  req,
+  res,
+}: {
+  req: Request;
+  res: Response;
+}): Context {
 
-  const authHeader = req.headers.authorization
+  const authHeader = req.headers.authorization;
 
   if (!authHeader) {
-    return { req, res }
+    return { req, res };
   }
 
-  const token = authHeader.split(" ")[1]
+  const token = authHeader.split(" ")[1];
 
   try {
 
-    const payload = jwt.verify(
+    const decoded = jwt.verify(
       token,
       process.env.JWT_SECRET!
-    ) as UserPayload
+    ) as UserPayload;
 
     return {
       req,
       res,
-      user: payload
-    }
+      user: decoded,
+    };
 
-  } catch {
+  } catch (error) {
 
-    return { req, res }
+    return { req, res };
 
   }
 

@@ -1,13 +1,15 @@
-import { router, publicProcedure } from "../trpc/trpc";
+import { router, protectedProcedure } from "../trpc/trpc";
 import { prisma } from "../lib/prisma";
 
 export const okrRouter = router({
 
-  list: publicProcedure.query(async ({ ctx }) => {
+  list: protectedProcedure.query(async ({ ctx }) => {
+
+    const companyId = ctx.user.companyId;
 
     return prisma.oKR.findMany({
       where: {
-        companyId: ctx.user.companyId
+        companyId
       },
       include: {
         keyResults: true
@@ -16,15 +18,17 @@ export const okrRouter = router({
 
   }),
 
-  create: publicProcedure
+  create: protectedProcedure
     .input((data: any) => data)
     .mutation(async ({ ctx, input }) => {
+
+      const companyId = ctx.user.companyId;
 
       return prisma.oKR.create({
         data: {
           title: input.title,
           description: input.description,
-          companyId: ctx.user.companyId
+          companyId
         }
       });
 
