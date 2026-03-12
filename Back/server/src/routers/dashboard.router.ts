@@ -13,9 +13,9 @@ export const dashboardRouter = router({
       throw new Error("No company found in database");
     }
 
-    const data = await getDashboard(company.id);
+    const dashboard = await getDashboard(company.id);
 
-    return data;
+    return dashboard;
 
   }),
 
