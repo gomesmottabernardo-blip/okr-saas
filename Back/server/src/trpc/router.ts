@@ -9,6 +9,7 @@ import { dashboardRouter } from "../routers/dashboard.router";
 import { clientRouter } from "../routers/client.router";
 import { okrRouter } from "../routers/okr.router";
 import { financialRouter } from "../routers/financial.router";
+import { dashboardRouter } from "../routers/dashboard.router";
 
 export const appRouter = router({
 
@@ -26,12 +27,6 @@ export const appRouter = router({
     )
     .mutation(async ({ input }) => {
 
-      // 🔒 Restrição de domínio
-      if (!input.email.endsWith("@funilfaixapreta.com")) {
-        throw new Error("Email domain not allowed");
-      }
-
-      // Buscar empresa
       const company = await prisma.company.findUnique({
         where: { slug: input.companySlug },
       });
@@ -40,7 +35,6 @@ export const appRouter = router({
         throw new Error("Company not found");
       }
 
-      // Buscar usuário
       const user = await prisma.user.findFirst({
         where: {
           email: input.email,
@@ -52,7 +46,6 @@ export const appRouter = router({
         throw new Error("Invalid credentials");
       }
 
-      // Validar senha
       const passwordMatch = await bcrypt.compare(
         input.password,
         user.password
@@ -62,7 +55,6 @@ export const appRouter = router({
         throw new Error("Invalid credentials");
       }
 
-      // Gerar token
       const token = signToken({
         userId: user.id,
         companyId: company.id,
@@ -71,17 +63,6 @@ export const appRouter = router({
       return { token };
 
     }),
-
-  secure: protectedProcedure.query(({ ctx }) => {
-    return {
-      message: "You are authenticated",
-      user: ctx.user,
-    };
-  }),
-
-  // -----------------------------
-  // MÓDULOS DO SISTEMA
-  // -----------------------------
 
   dashboard: dashboardRouter,
 
