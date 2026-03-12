@@ -1,4 +1,4 @@
-import { prisma } from "../db/prisma"
+import { prisma } from "../lib/prisma"
 import { calculateMRR, calculateAverageTicket } from "../lib/calculations/metrics"
 
 export async function getCompanyMetrics(companyId: string) {
