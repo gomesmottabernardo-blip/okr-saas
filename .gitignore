@@ -1,0 +1,23 @@
+# Dependências
+node_modules/
+
+# Build
+dist/
+dist-ssr/
+
+# Variáveis de ambiente (NUNCA commitar — contém senhas e chaves)
+.env
+.env.local
+.env.production
+
+# Logs
+*.log
+npm-debug.log*
+
+# Editor
+.vscode/*
+.idea/
+.DS_Store
+
+# Claude Code (memória local, não vai para o repositório)
+.claude/

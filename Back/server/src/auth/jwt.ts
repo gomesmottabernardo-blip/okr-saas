@@ -1,20 +1,13 @@
-import jwt from 'jsonwebtoken';
+import jwt from "jsonwebtoken";
 
-const JWT_SECRET = process.env.JWT_SECRET || 'super-secret-key';
+const JWT_SECRET = process.env.JWT_SECRET || "supersecret";
 
-export interface TokenPayload {
-  userId: string;
-  companyId: string;
+export function signToken(payload: any) {
+  return jwt.sign(payload, JWT_SECRET, {
+    expiresIn: "7d",
+  });
 }
 
-export const signToken = (payload: TokenPayload) => {
-  return jwt.sign(payload, JWT_SECRET, { expiresIn: '7d' });
-};
-
-export const verifyToken = (token: string): TokenPayload | null => {
-  try {
-    return jwt.verify(token, JWT_SECRET) as TokenPayload;
-  } catch {
-    return null;
-  }
-};
+export function verifyToken(token: string) {
+  return jwt.verify(token, JWT_SECRET);
+}

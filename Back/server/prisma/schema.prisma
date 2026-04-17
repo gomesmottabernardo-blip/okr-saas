@@ -1,3 +1,35 @@
+// ============================================================================
+// OKR SaaS Multi-Tenant — Schema Evoluído (Rodada 1)
+// ============================================================================
+//
+// O QUE MUDOU em relação ao schema atual:
+//
+// PRESERVADO (sem breaking changes):
+//   ✔ Company — adicionado updatedAt + novas relações
+//   ✔ User — adicionado name, updatedAt, unique por [email,companyId]
+//   ✔ Client — intacto
+//   ✔ FinancialTransaction — intacto
+//
+// EVOLUÍDO:
+//   ✔ OKR → Objective — renomeado + adicionado status, progress, cycle, owner
+//   ✔ KeyResult — adicionado progressMode, status, owner, companyId
+//
+// NOVO:
+//   + Cycle — ciclos trimestrais (Q1 2026, Q2 2026...)
+//   + Action — tarefas operacionais vinculadas a KeyResults
+//   + ExternalMapping — sync bidirecional com fontes externas
+//   + SyncLog — auditoria de sincronizações
+//   + InviteToken — onboarding self-service (Rodada 2)
+//
+// MIGRATION STRATEGY:
+//   1. Renomear table "OKR" → "objectives" (@@map)
+//   2. Renomear "KeyResult" columns: target → targetValue, current → currentValue
+//   3. Adicionar novos campos com defaults (não quebra dados existentes)
+//   4. Criar tabelas novas (Cycle, Action, etc.)
+//   5. Migration script: criar cycle default + popular companyId nos KRs via join
+//
+// ============================================================================
+
 generator client {
   provider = "prisma-client-js"
 }
@@ -7,30 +39,119 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+// ============================================================================
+// ENUMS
+// ============================================================================
+
+enum Role {
+  ADMIN
+  MEMBER
+}
+
+enum CycleStatus {
+  PLANNING   // Preparando OKRs do próximo trimestre
+  ACTIVE     // Ciclo em execução
+  CLOSED     // Encerrado, dados congelados para histórico
+}
+
+enum OkrStatus {
+  NOT_STARTED
+  IN_PROGRESS
+  AT_RISK
+  COMPLETED
+  CANCELLED
+}
+
+enum ActionStatus {
+  NOT_STARTED
+  IN_PROGRESS
+  AT_RISK
+  COMPLETED
+}
+
+enum ProgressMode {
+  ACTION_BASED   // (concluidas + em_andamento * 0.5) / total
+  METRIC_BASED   // currentValue / targetValue
+}
+
+enum DataSource {
+  NOTION
+  TRELLO
+  GOOGLE_SHEETS
+  MANUAL
+}
+
+enum MappableEntity {
+  OBJECTIVE
+  KEY_RESULT
+  ACTION
+}
+
+enum SyncStatus {
+  RUNNING
+  SUCCESS
+  PARTIAL
+  FAILED
+}
+
+// ============================================================================
+// COMPANY
+// ============================================================================
+
 model Company {
   id        String   @id @default(uuid())
   name      String
   slug      String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
 
-  users     User[]
-  clients   Client[]
-  okrs      OKR[]
+  // Relações existentes (preservadas)
+  users                 User[]
+  clients               Client[]
   financialTransactions FinancialTransaction[]
 
-  createdAt DateTime @default(now())
+  // Relações novas
+  cycles           Cycle[]
+  objectives       Objective[]
+  keyResults       KeyResult[]
+  actions          Action[]
+  externalMappings ExternalMapping[]
+  syncLogs         SyncLog[]
+  inviteTokens     InviteToken[]
+
+  @@map("companies")
 }
+
+// ============================================================================
+// USER
+// ============================================================================
 
 model User {
   id        String   @id @default(uuid())
   email     String
   password  String
-  role      String
-
+  name      String?
+  role      Role     @default(MEMBER)
   companyId String
-  company   Company @relation(fields: [companyId], references: [id])
-
   createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+
+  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  // Ownership de OKRs
+  ownedObjectives Objective[] @relation("ObjectiveOwner")
+  ownedKeyResults KeyResult[] @relation("KeyResultOwner")
+  ownedActions    Action[]    @relation("ActionOwner")
+  createdInvites  InviteToken[]
+
+  @@unique([email, companyId])
+  @@index([companyId])
+  @@map("users")
 }
+
+// ============================================================================
+// CLIENT (preservado intacto)
+// ============================================================================
 
 model Client {
   id           String   @id @default(uuid())
@@ -39,47 +160,230 @@ model Client {
   monthlyValue Float
   startDate    DateTime
   active       Boolean  @default(true)
+  companyId    String
+  createdAt    DateTime @default(now())
 
-  companyId String
-  company   Company @relation(fields: [companyId], references: [id])
+  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
 
-  createdAt DateTime @default(now())
+  @@index([companyId])
+  @@map("clients")
 }
 
-model OKR {
-  id          String   @id @default(uuid())
-  title       String
-  description String?
-
-  companyId String
-  company   Company @relation(fields: [companyId], references: [id])
-
-  keyResults KeyResult[]
-
-  createdAt DateTime @default(now())
-}
-
-model KeyResult {
-  id      String  @id @default(uuid())
-  title   String
-  target  Float
-  current Float   @default(0)
-
-  okrId String
-  okr   OKR @relation(fields: [okrId], references: [id])
-}
+// ============================================================================
+// FINANCIAL TRANSACTION (preservado intacto)
+// ============================================================================
 
 model FinancialTransaction {
   id          String   @id @default(uuid())
-
   description String
   type        String
   amount      Float
   date        DateTime
   clientName  String?
+  companyId   String
+  createdAt   DateTime @default(now())
 
+  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@index([companyId])
+  @@map("financial_transactions")
+}
+
+// ============================================================================
+// CYCLE — Ciclos trimestrais
+// ============================================================================
+// A FFP opera por Q1/Q2/Q3/Q4 com metas por trimestre.
+// Apenas 1 cycle ACTIVE por empresa por vez.
+// ============================================================================
+
+model Cycle {
+  id        String      @id @default(uuid())
+  label     String                              // "Q2 2026", "Anual 2026"
+  startDate DateTime
+  endDate   DateTime
+  status    CycleStatus @default(PLANNING)
   companyId String
-  company   Company @relation(fields: [companyId], references: [id])
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @default(now()) @updatedAt
 
-  createdAt DateTime @default(now())
+  company    Company     @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  objectives Objective[]
+
+  @@unique([companyId, label])
+  @@index([companyId])
+  @@index([companyId, status])
+  @@map("cycles")
+}
+
+// ============================================================================
+// OBJECTIVE (evolução do antigo model OKR)
+// ============================================================================
+// Renomeado de OKR → Objective para clareza semântica.
+// progress = média dos KeyResults filhos.
+// ============================================================================
+
+model Objective {
+  id          String    @id @default(uuid())
+  title       String
+  description String?
+  status      OkrStatus @default(NOT_STARTED)
+  progress    Float     @default(0)             // 0.0 a 1.0
+  sortOrder   Int       @default(0)
+  ownerId     String?
+  cycleId     String?                            // Nullable para migration
+  companyId   String
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @default(now()) @updatedAt
+
+  company    Company     @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  cycle      Cycle?      @relation(fields: [cycleId], references: [id], onDelete: SetNull)
+  owner      User?       @relation("ObjectiveOwner", fields: [ownerId], references: [id], onDelete: SetNull)
+  keyResults KeyResult[]
+
+  @@index([companyId])
+  @@index([companyId, cycleId])
+  @@index([ownerId])
+  @@map("objectives")
+}
+
+// ============================================================================
+// KEY RESULT
+// ============================================================================
+// Dois modos de progresso:
+//   ACTION_BASED  → (concluidas + em_andamento * 0.5) / total
+//   METRIC_BASED  → currentValue / targetValue
+//
+// Campos target/current originais → targetValue/currentValue
+// ============================================================================
+
+model KeyResult {
+  id           String       @id @default(uuid())
+  title        String
+  description  String?
+  status       OkrStatus    @default(NOT_STARTED)
+  progressMode ProgressMode @default(METRIC_BASED)
+  progress     Float        @default(0)
+
+  // Campos METRIC_BASED (evoluídos do target/current original)
+  startValue   Float?       @default(0)
+  currentValue Float        @default(0)
+  targetValue  Float        @default(0)
+  unit         String?
+
+  sortOrder   Int       @default(0)
+  ownerId     String?
+  objectiveId String
+  companyId   String
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @default(now()) @updatedAt
+
+  company   Company   @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  objective Objective @relation(fields: [objectiveId], references: [id], onDelete: Cascade)
+  owner     User?     @relation("KeyResultOwner", fields: [ownerId], references: [id], onDelete: SetNull)
+  actions   Action[]
+
+  @@index([companyId])
+  @@index([objectiveId])
+  @@index([ownerId])
+  @@map("key_results")
+}
+
+// ============================================================================
+// ACTION — Tarefas operacionais (NOVO)
+// ============================================================================
+
+model Action {
+  id             String       @id @default(uuid())
+  title          String
+  description    String?
+  status         ActionStatus @default(NOT_STARTED)
+  externalStatus String?
+  sortOrder      Int          @default(0)
+  dueDate        DateTime?
+  completedAt    DateTime?
+  ownerId        String?
+  keyResultId    String
+  companyId      String
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @default(now()) @updatedAt
+
+  company   Company   @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  keyResult KeyResult @relation(fields: [keyResultId], references: [id], onDelete: Cascade)
+  owner     User?     @relation("ActionOwner", fields: [ownerId], references: [id], onDelete: SetNull)
+
+  @@index([companyId])
+  @@index([keyResultId])
+  @@index([ownerId])
+  @@index([companyId, status])
+  @@map("actions")
+}
+
+// ============================================================================
+// EXTERNAL MAPPING — Sync com fontes externas (NOVO)
+// ============================================================================
+
+model ExternalMapping {
+  id           String         @id @default(uuid())
+  entityType   MappableEntity
+  entityId     String
+  source       DataSource
+  externalId   String
+  metadata     Json?
+  companyId    String
+  lastSyncedAt DateTime       @default(now())
+  createdAt    DateTime       @default(now())
+
+  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@unique([companyId, source, externalId])
+  @@index([entityType, entityId])
+  @@index([companyId])
+  @@map("external_mappings")
+}
+
+// ============================================================================
+// SYNC LOG — Auditoria (NOVO)
+// ============================================================================
+
+model SyncLog {
+  id            String     @id @default(uuid())
+  source        DataSource
+  status        SyncStatus
+  itemsSynced   Int        @default(0)
+  itemsFailed   Int        @default(0)
+  errorMessage  String?
+  durationMs    Int?
+  triggeredBy   String?
+  companyId     String
+  startedAt     DateTime   @default(now())
+  completedAt   DateTime?
+
+  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@index([companyId])
+  @@index([companyId, source])
+  @@map("sync_logs")
+}
+
+// ============================================================================
+// INVITE TOKEN — Onboarding (Rodada 2, tabela criada agora)
+// ============================================================================
+
+model InviteToken {
+  id        String    @id @default(uuid())
+  token     String    @unique @default(uuid())
+  email     String?
+  role      Role      @default(MEMBER)
+  usedAt    DateTime?
+  expiresAt DateTime
+  companyId String
+  createdBy String?
+  createdAt DateTime  @default(now())
+
+  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  creator User?   @relation(fields: [createdBy], references: [id], onDelete: SetNull)
+
+  @@index([companyId])
+  @@index([token])
+  @@map("invite_tokens")
 }
