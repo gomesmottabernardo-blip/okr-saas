@@ -1,26 +1,3 @@
-import { prisma } from "../lib/prisma"
-import { getCompanyMetrics } from "./metrics.service"
-import { getMonthlyMetrics } from "./metrics-history.service"
-
-export async function getDashboard(companyId: string) {
-
-  const metrics = await getCompanyMetrics(companyId)
-
-  const monthlyMetrics = await getMonthlyMetrics(companyId)
-
-  const okrs = await prisma.oKR.findMany({
-    where: {
-      companyId
-    },
-    include: {
-      keyResults: true
-    }
-  })
-
-  return {
-    ...metrics,
-    monthlyMetrics,
-    okrs
-  }
-
-}
+// Este serviço foi substituído por metrics.service.ts e okr.service.ts
+// O dashboard.router.ts já usa esses serviços diretamente.
+export {}

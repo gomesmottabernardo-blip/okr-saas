@@ -31,6 +31,7 @@ interface ActionForCalc {
 
 interface KeyResultForCalc {
   id: string
+  title: string
   progressMode: ProgressMode
   startValue: number | null
   currentValue: number
@@ -40,6 +41,7 @@ interface KeyResultForCalc {
 
 interface ObjectiveForCalc {
   id: string
+  title: string
   keyResults: KeyResultForCalc[]
 }
 

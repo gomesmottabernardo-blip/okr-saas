@@ -62,7 +62,7 @@ const createActionSchema = z.object({
   description: z.string().optional(),
   keyResultId: z.string().uuid(),
   ownerId: z.string().uuid().optional(),
-  dueDate: z.string().datetime().optional().transform(v => v ? new Date(v) : undefined),
+  dueDate: z.coerce.date().optional(),
 })
 
 const updateActionSchema = z.object({
@@ -71,14 +71,14 @@ const updateActionSchema = z.object({
   description: z.string().optional(),
   status: z.enum(["NOT_STARTED", "IN_PROGRESS", "AT_RISK", "COMPLETED"]).optional(),
   ownerId: z.string().uuid().nullable().optional(),
-  dueDate: z.string().datetime().nullable().optional().transform(v => v ? new Date(v) : undefined),
+  dueDate: z.coerce.date().nullable().optional(),
   sortOrder: z.number().int().optional(),
 })
 
 const createCycleSchema = z.object({
   label: z.string().min(1).max(100),
-  startDate: z.string().datetime().transform(v => new Date(v)),
-  endDate: z.string().datetime().transform(v => new Date(v)),
+  startDate: z.coerce.date(),
+  endDate: z.coerce.date(),
 })
 
 // ----------------------------------------------------------------------------
