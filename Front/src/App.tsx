@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react"
-import { isLoggedIn, logout, fetchCompanySettings } from "./services/api"
+import { isLoggedIn, logout, fetchCompanySettings, getMyRole } from "./services/api"
 import Login from "./pages/Login"
 import Dashboard from "./pages/Dashboard"
 import OkrManager from "./pages/OkrManager"
@@ -22,9 +22,13 @@ export default function App() {
     primaryColor: "#6366f1",
   })
   const [logoError, setLogoError] = useState(false)
+  const [isAdmin, setIsAdmin] = useState(false)
 
   useEffect(() => {
-    if (loggedIn) loadBrand()
+    if (loggedIn) {
+      setIsAdmin(getMyRole() === "ADMIN")
+      loadBrand()
+    }
   }, [loggedIn])
 
   async function loadBrand() {
@@ -126,9 +130,9 @@ export default function App() {
 
       {/* ── Content ──────────────────────────────────────── */}
       <main style={{ maxWidth: 980, margin: "0 auto", padding: "32px 24px" }}>
-        {tab === "dashboard" && <Dashboard />}
+        {tab === "dashboard" && <Dashboard isAdmin={isAdmin} />}
         {tab === "okrs" && <OkrManager primaryColor={primary} />}
-        {tab === "insights" && <Insights />}
+        {tab === "insights" && <Insights isAdmin={isAdmin} />}
         {tab === "settings" && <Settings onSave={handleBrandUpdate} />}
       </main>
     </div>

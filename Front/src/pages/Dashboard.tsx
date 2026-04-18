@@ -12,7 +12,7 @@ import {
 
 type ChartType = "bar" | "line" | "area"
 
-export default function Dashboard() {
+export default function Dashboard({ isAdmin = false }: { isAdmin?: boolean }) {
   const [data, setData] = useState<any>(null)
   const [monthly, setMonthly] = useState<any[]>([])
   const [cycles, setCycles] = useState<any[]>([])
@@ -38,10 +38,9 @@ export default function Dashboard() {
   async function loadDashboard() {
     setLoading(true)
     try {
-      const [summary, mon] = await Promise.all([
-        fetchDashboardSummary(selectedCycle || undefined),
-        fetchMonthlyBreakdown(),
-      ])
+      const promises: Promise<any>[] = [fetchDashboardSummary(selectedCycle || undefined)]
+      if (isAdmin) promises.push(fetchMonthlyBreakdown())
+      const [summary, mon] = await Promise.all(promises)
       setData(summary)
       setMonthly(mon || [])
     } catch (err) { console.error(err) }
@@ -85,8 +84,8 @@ export default function Dashboard() {
         </div>
       )}
 
-      {/* KPI Cards — título clicável abre modal de projeções */}
-      {fin && (
+      {/* KPI Cards — só para admins */}
+      {fin && isAdmin && (
         <>
           <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 16 }}>
             <h2 style={{ ...sectionTitle, margin: 0 }}>Métricas Financeiras</h2>
@@ -114,8 +113,8 @@ export default function Dashboard() {
         </>
       )}
 
-      {/* Gráfico de Evolução Mensal */}
-      {monthly.length > 0 && (
+      {/* Gráfico de Evolução Mensal — só para admins */}
+      {isAdmin && monthly.length > 0 && (
         <>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
             <h2 style={{ ...sectionTitle, margin: 0 }}>Evolução Mensal</h2>

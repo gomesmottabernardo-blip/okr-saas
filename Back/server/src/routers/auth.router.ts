@@ -49,7 +49,8 @@ export const authRouter = router({
       const token = jwt.sign(
         {
           userId: user.id,
-          companyId: company.id
+          companyId: company.id,
+          role: user.role
         },
         process.env.JWT_SECRET!,
         {
@@ -58,7 +59,8 @@ export const authRouter = router({
       )
 
       return {
-        token
+        token,
+        role: user.role
       }
 
     })

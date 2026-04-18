@@ -25,11 +25,16 @@ const isAuthed = t.middleware(({ next, ctx }) => {
     const decoded = verifyToken(token) as {
       userId: string;
       companyId: string;
+      role?: string;
     };
 
     return next({
       ctx: {
-        user: decoded,
+        user: {
+          userId: decoded.userId,
+          companyId: decoded.companyId,
+          role: decoded.role || 'MEMBER',
+        },
       },
     });
   } catch (err) {
@@ -37,4 +42,45 @@ const isAuthed = t.middleware(({ next, ctx }) => {
   }
 });
 
+// 🔐 Middleware de autorização — apenas admins
+const isAdmin = t.middleware(({ next, ctx }) => {
+  const authHeader = ctx.req.headers.authorization;
+
+  if (!authHeader) {
+    throw new TRPCError({ code: 'UNAUTHORIZED' });
+  }
+
+  const token = authHeader.split(' ')[1];
+
+  if (!token) {
+    throw new TRPCError({ code: 'UNAUTHORIZED' });
+  }
+
+  try {
+    const decoded = verifyToken(token) as {
+      userId: string;
+      companyId: string;
+      role?: string;
+    };
+
+    if (decoded.role !== 'ADMIN') {
+      throw new TRPCError({ code: 'FORBIDDEN' });
+    }
+
+    return next({
+      ctx: {
+        user: {
+          userId: decoded.userId,
+          companyId: decoded.companyId,
+          role: decoded.role,
+        },
+      },
+    });
+  } catch (err) {
+    if (err instanceof TRPCError) throw err;
+    throw new TRPCError({ code: 'UNAUTHORIZED' });
+  }
+});
+
 export const protectedProcedure = t.procedure.use(isAuthed);
+export const adminProcedure = t.procedure.use(isAdmin);

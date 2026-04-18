@@ -87,6 +87,17 @@ export function isLoggedIn(): boolean {
   return !!getToken()
 }
 
+export function getMyRole(): "ADMIN" | "MEMBER" {
+  const token = localStorage.getItem("token")
+  if (!token) return "MEMBER"
+  try {
+    const payload = JSON.parse(atob(token.split(".")[1]))
+    return payload.role === "ADMIN" ? "ADMIN" : "MEMBER"
+  } catch {
+    return "MEMBER"
+  }
+}
+
 export async function fetchDashboardSummary(cycleId?: string) {
   return trpcQuery("dashboard.summary", cycleId ? { cycleId } : undefined)
 }
