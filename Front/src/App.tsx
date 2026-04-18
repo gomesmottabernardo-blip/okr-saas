@@ -1,18 +1,65 @@
 import { useState, useEffect } from "react"
-import { isLoggedIn, logout } from "./services/api"
+import { isLoggedIn, logout, fetchCompanySettings } from "./services/api"
 import Login from "./pages/Login"
 import Dashboard from "./pages/Dashboard"
 import OkrManager from "./pages/OkrManager"
+import Insights from "./pages/Insights"
+import Settings from "./pages/Settings"
 
-type Tab = "dashboard" | "okrs"
+type Tab = "dashboard" | "okrs" | "insights" | "settings"
+
+interface CompanyBrand {
+  name: string
+  primaryColor: string
+  logoUrl?: string
+}
 
 export default function App() {
   const [loggedIn, setLoggedIn] = useState(isLoggedIn())
   const [tab, setTab] = useState<Tab>("dashboard")
+  const [brand, setBrand] = useState<CompanyBrand>({
+    name: "Strategic OS",
+    primaryColor: "#6366f1",
+  })
+
+  useEffect(() => {
+    if (loggedIn) loadBrand()
+  }, [loggedIn])
+
+  async function loadBrand() {
+    try {
+      const s = await fetchCompanySettings()
+      if (s) {
+        const b: CompanyBrand = {
+          name: s.name || "Strategic OS",
+          primaryColor: s.primaryColor || "#6366f1",
+          logoUrl: s.logoUrl || undefined,
+        }
+        setBrand(b)
+        applyTheme(b.primaryColor)
+      }
+    } catch (_) {}
+  }
+
+  function applyTheme(color: string) {
+    document.documentElement.style.setProperty("--primary", color)
+  }
+
+  function handleBrandUpdate(updates: { primaryColor?: string; logoUrl?: string; name?: string }) {
+    setBrand(prev => ({
+      ...prev,
+      ...(updates.name && { name: updates.name }),
+      ...(updates.primaryColor && { primaryColor: updates.primaryColor }),
+      ...(updates.logoUrl !== undefined && { logoUrl: updates.logoUrl || undefined }),
+    }))
+    if (updates.primaryColor) applyTheme(updates.primaryColor)
+  }
 
   if (!loggedIn) {
     return <Login onLogin={() => setLoggedIn(true)} />
   }
+
+  const primary = brand.primaryColor
 
   return (
     <div style={{
@@ -20,10 +67,10 @@ export default function App() {
       background: "#f8f9fb",
       fontFamily: "'Inter', system-ui, -apple-system, sans-serif",
     }}>
-      {/* ── Top bar ──────────────────────────────────────── */}
+      {/* ── Header ───────────────────────────────────────── */}
       <header style={{
         background: "white",
-        borderBottom: "1px solid #eee",
+        borderBottom: `3px solid ${primary}`,
         padding: "0 32px",
         display: "flex",
         alignItems: "center",
@@ -31,63 +78,73 @@ export default function App() {
         position: "sticky",
         top: 0,
         zIndex: 10,
+        gap: 0,
       }}>
-        <span style={{
-          fontSize: 16,
-          fontWeight: 700,
-          color: "#111",
-          marginRight: 40,
-        }}>
-          Strategic OS
-        </span>
+        {/* Logo / brand */}
+        <div style={{ display: "flex", alignItems: "center", gap: 10, marginRight: 36, minWidth: 0 }}>
+          {brand.logoUrl ? (
+            <img
+              src={brand.logoUrl}
+              alt={brand.name}
+              style={{ height: 28, maxWidth: 100, objectFit: "contain" }}
+              onError={e => { (e.target as HTMLImageElement).style.display = "none" }}
+            />
+          ) : (
+            <div style={{
+              width: 28, height: 28, borderRadius: 7,
+              background: primary,
+              display: "flex", alignItems: "center", justifyContent: "center",
+              fontSize: 13, fontWeight: 800, color: "white",
+            }}>
+              {brand.name.charAt(0).toUpperCase()}
+            </div>
+          )}
+          <span style={{ fontSize: 15, fontWeight: 700, color: "#111", whiteSpace: "nowrap" }}>
+            {brand.name}
+          </span>
+        </div>
 
-        <nav style={{ display: "flex", gap: 4, flex: 1 }}>
-          <TabButton label="Dashboard" active={tab === "dashboard"} onClick={() => setTab("dashboard")} />
-          <TabButton label="OKRs" active={tab === "okrs"} onClick={() => setTab("okrs")} />
+        {/* Nav tabs */}
+        <nav style={{ display: "flex", gap: 2, flex: 1 }}>
+          <TabBtn label="Dashboard" active={tab === "dashboard"} color={primary} onClick={() => setTab("dashboard")} />
+          <TabBtn label="OKRs" active={tab === "okrs"} color={primary} onClick={() => setTab("okrs")} />
+          <TabBtn label="Insights" active={tab === "insights"} color={primary} onClick={() => setTab("insights")} />
+          <TabBtn label="Configurações" active={tab === "settings"} color={primary} onClick={() => setTab("settings")} />
         </nav>
 
         <button
           onClick={logout}
-          style={{
-            background: "none",
-            border: "none",
-            color: "#888",
-            fontSize: 13,
-            cursor: "pointer",
-            padding: "6px 12px",
-            borderRadius: 6,
-          }}
+          style={{ background: "none", border: "none", color: "#aaa", fontSize: 13, cursor: "pointer", padding: "6px 10px", borderRadius: 6 }}
         >
           Sair
         </button>
       </header>
 
-      {/* ── Conteúdo ─────────────────────────────────────── */}
-      <main style={{
-        maxWidth: 960,
-        margin: "0 auto",
-        padding: "32px 24px",
-      }}>
+      {/* ── Content ──────────────────────────────────────── */}
+      <main style={{ maxWidth: 980, margin: "0 auto", padding: "32px 24px" }}>
         {tab === "dashboard" && <Dashboard />}
-        {tab === "okrs" && <OkrManager />}
+        {tab === "okrs" && <OkrManager primaryColor={primary} />}
+        {tab === "insights" && <Insights />}
+        {tab === "settings" && <Settings onSave={handleBrandUpdate} />}
       </main>
     </div>
   )
 }
 
-function TabButton({ label, active, onClick }: { label: string; active: boolean; onClick: () => void }) {
+function TabBtn({ label, active, color, onClick }: { label: string; active: boolean; color: string; onClick: () => void }) {
   return (
     <button
       onClick={onClick}
       style={{
-        padding: "8px 16px",
+        padding: "8px 14px",
         borderRadius: 6,
         border: "none",
-        background: active ? "#f3f4f6" : "transparent",
-        color: active ? "#111" : "#888",
+        background: active ? `${color}15` : "transparent",
+        color: active ? color : "#888",
         fontSize: 13,
         fontWeight: active ? 600 : 400,
         cursor: "pointer",
+        transition: "all 0.15s",
       }}
     >
       {label}

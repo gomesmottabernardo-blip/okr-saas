@@ -95,6 +95,30 @@ export async function fetchMonthlyBreakdown() {
   return trpcQuery("dashboard.monthly")
 }
 
+export async function fetchCompanySettings() {
+  return trpcQuery("company.getSettings")
+}
+
+export async function updateCompanySettings(data: {
+  domain?: string
+  primaryColor?: string
+  logoUrl?: string | null
+}) {
+  return trpcMutation("company.updateSettings", data)
+}
+
+export async function fetchUsers() {
+  return trpcQuery("okr.listUsers")
+}
+
+export async function fetchOverdueAlerts(cycleId?: string) {
+  return trpcQuery("okr.overdueAlerts", cycleId ? { cycleId } : undefined)
+}
+
+export async function fetchCycleInsights(cycleId?: string) {
+  return trpcQuery("insights.getCycleInsights", cycleId ? { cycleId } : undefined)
+}
+
 export async function fetchFinancialMetrics() {
   return trpcQuery("dashboard.financial")
 }

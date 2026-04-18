@@ -99,10 +99,13 @@ enum SyncStatus {
 // ============================================================================
 
 model Company {
-  id        String   @id @default(uuid())
-  name      String
-  slug      String   @unique
-  createdAt DateTime @default(now())
+  id           String   @id @default(uuid())
+  name         String
+  slug         String   @unique
+  domain       String?
+  primaryColor String?
+  logoUrl      String?
+  createdAt    DateTime @default(now())
   updatedAt DateTime @default(now()) @updatedAt
 
   // Relações existentes (preservadas)

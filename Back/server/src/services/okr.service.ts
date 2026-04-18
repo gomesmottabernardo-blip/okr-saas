@@ -141,7 +141,12 @@ export async function listObjectives(companyId: string, cycleId?: string) {
       owner: { select: { id: true, name: true, email: true } },
       keyResults: {
         include: {
-          actions: true,
+          actions: {
+            include: {
+              owner: { select: { id: true, name: true } },
+            },
+            orderBy: { sortOrder: "asc" },
+          },
           owner: { select: { id: true, name: true, email: true } },
         },
         orderBy: { sortOrder: "asc" },
@@ -473,6 +478,72 @@ export async function recalculateFullCycle(
 
     await recalculateObjectiveProgress(companyId, obj.id)
   }
+}
+
+// ----------------------------------------------------------------------------
+// Users
+// ----------------------------------------------------------------------------
+
+export async function listUsers(companyId: string) {
+  return prisma.user.findMany({
+    where: { companyId },
+    select: { id: true, name: true, email: true },
+    orderBy: { name: "asc" },
+  })
+}
+
+// ----------------------------------------------------------------------------
+// Overdue Alerts
+// ----------------------------------------------------------------------------
+
+export async function getOverdueAlerts(companyId: string, cycleId?: string) {
+  const now = new Date()
+  let targetCycleId = cycleId
+  if (!targetCycleId) {
+    const active = await getActiveCycle(companyId)
+    targetCycleId = active?.id
+  }
+
+  const where: any = {
+    companyId,
+    status: { not: "COMPLETED" as const },
+    OR: [
+      { dueDate: { lt: now } },
+      { status: "AT_RISK" },
+    ],
+  }
+
+  if (targetCycleId) {
+    where.keyResult = { objective: { cycleId: targetCycleId } }
+  }
+
+  const actions = await prisma.action.findMany({
+    where,
+    include: {
+      owner: { select: { id: true, name: true } },
+      keyResult: {
+        include: {
+          objective: { select: { id: true, title: true, progress: true } },
+        },
+      },
+    },
+    orderBy: { dueDate: "asc" },
+    take: 20,
+  })
+
+  return actions
+    .sort((a, b) => (a.keyResult.objective.progress) - (b.keyResult.objective.progress))
+    .map(a => ({
+      id: a.id,
+      title: a.title,
+      status: a.status,
+      dueDate: a.dueDate,
+      isOverdue: a.dueDate ? a.dueDate < now : false,
+      ownerName: a.owner?.name ?? null,
+      keyResultTitle: a.keyResult.title,
+      objectiveTitle: a.keyResult.objective.title,
+      objectiveProgress: a.keyResult.objective.progress,
+    }))
 }
 
 // ----------------------------------------------------------------------------

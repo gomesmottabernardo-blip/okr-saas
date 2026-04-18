@@ -203,4 +203,14 @@ export const okrRouter = router({
       return { success: true }
     }),
 
+  listUsers: protectedProcedure.query(async ({ ctx }) => {
+    return okrService.listUsers(ctx.user.companyId)
+  }),
+
+  overdueAlerts: protectedProcedure
+    .input(z.object({ cycleId: z.string().uuid().optional() }).optional())
+    .query(async ({ ctx, input }) => {
+      return okrService.getOverdueAlerts(ctx.user.companyId, input?.cycleId)
+    }),
+
 })
