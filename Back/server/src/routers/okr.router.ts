@@ -11,7 +11,7 @@
 // ============================================================================
 
 import { z } from "zod"
-import { router, protectedProcedure } from "../trpc/trpc"
+import { router, protectedProcedure, adminProcedure } from "../trpc/trpc"
 import * as okrService from "../services/okr.service"
 
 // ----------------------------------------------------------------------------
@@ -20,7 +20,7 @@ import * as okrService from "../services/okr.service"
 
 const createObjectiveSchema = z.object({
   title: z.string().min(1).max(255),
-  description: z.string().optional(),
+  description: z.string().max(2000).optional(),
   ownerId: z.string().uuid().optional(),
   cycleId: z.string().uuid().optional(),
 })
@@ -28,7 +28,7 @@ const createObjectiveSchema = z.object({
 const updateObjectiveSchema = z.object({
   id: z.string().uuid(),
   title: z.string().min(1).max(255).optional(),
-  description: z.string().optional(),
+  description: z.string().max(2000).optional(),
   status: z.enum(["NOT_STARTED", "IN_PROGRESS", "AT_RISK", "COMPLETED", "CANCELLED"]).optional(),
   ownerId: z.string().uuid().nullable().optional(),
   cycleId: z.string().uuid().nullable().optional(),
@@ -37,7 +37,7 @@ const updateObjectiveSchema = z.object({
 
 const createKeyResultSchema = z.object({
   title: z.string().min(1).max(255),
-  description: z.string().optional(),
+  description: z.string().max(2000).optional(),
   objectiveId: z.string().uuid(),
   progressMode: z.enum(["ACTION_BASED", "METRIC_BASED"]).optional(),
   targetValue: z.number().optional(),
@@ -49,7 +49,7 @@ const createKeyResultSchema = z.object({
 const updateKeyResultSchema = z.object({
   id: z.string().uuid(),
   title: z.string().min(1).max(255).optional(),
-  description: z.string().optional(),
+  description: z.string().max(2000).optional(),
   status: z.enum(["NOT_STARTED", "IN_PROGRESS", "AT_RISK", "COMPLETED", "CANCELLED"]).optional(),
   currentValue: z.number().optional(),
   targetValue: z.number().optional(),
@@ -59,7 +59,7 @@ const updateKeyResultSchema = z.object({
 
 const createActionSchema = z.object({
   title: z.string().min(1).max(255),
-  description: z.string().optional(),
+  description: z.string().max(2000).optional(),
   keyResultId: z.string().uuid(),
   ownerId: z.string().uuid().optional(),
   dueDate: z.coerce.date().optional(),
@@ -68,7 +68,7 @@ const createActionSchema = z.object({
 const updateActionSchema = z.object({
   id: z.string().uuid(),
   title: z.string().min(1).max(255).optional(),
-  description: z.string().optional(),
+  description: z.string().max(2000).optional(),
   status: z.enum(["NOT_STARTED", "IN_PROGRESS", "AT_RISK", "COMPLETED"]).optional(),
   ownerId: z.string().uuid().nullable().optional(),
   dueDate: z.coerce.date().nullable().optional(),
@@ -196,7 +196,7 @@ export const okrRouter = router({
     }),
 
   // Recalcula todos os progressos de um ciclo (admin only)
-  recalculateCycle: protectedProcedure
+  recalculateCycle: adminProcedure
     .input(z.object({ cycleId: z.string().uuid() }))
     .mutation(async ({ ctx, input }) => {
       await okrService.recalculateFullCycle(ctx.user.companyId, input.cycleId)

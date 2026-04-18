@@ -58,9 +58,9 @@ export const companyRouter = router({
   // Salva configurações de cor/logo manualmente
   updateSettings: protectedProcedure
     .input(z.object({
-      domain: z.string().max(255).optional(),
+      domain:      z.string().max(255).optional(),
       primaryColor: z.string().max(20).optional(),
-      logoUrl: z.string().optional().nullable(),
+      logoUrl:     z.string().url().max(2048).optional().nullable(),
     }))
     .mutation(async ({ ctx, input }) => {
       return prisma.company.update({
