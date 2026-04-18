@@ -570,8 +570,10 @@ export async function getDashboardOkrMetrics(
     include: {
       objectives: {
         include: {
+          owner: { select: { id: true, name: true } },
           keyResults: {
             include: {
+              owner: { select: { id: true, name: true } },
               actions: {
                 include: {
                   owner: { select: { id: true, name: true } },
@@ -602,11 +604,76 @@ export async function getDashboardOkrMetrics(
         actions: kr.actions.map(a => ({
           status: a.status,
           ownerId: a.ownerId,
-          ownerName: a.owner?.name ?? a.owner?.id ?? null,
+          ownerName: a.owner?.name ?? null,
         })),
       })),
     })),
   }
 
-  return calculateDashboardMetrics(cycleForCalc as any)
+  const baseMetrics = calculateDashboardMetrics(cycleForCalc as any)
+
+  // Enriquece objectives e KRs com dados de owner
+  const krOwnerMap = new Map<string, string | null>()
+  const objOwnerMap = new Map<string, string | null>()
+  for (const obj of cycle.objectives) {
+    objOwnerMap.set(obj.id, obj.owner?.name ?? null)
+    for (const kr of obj.keyResults) {
+      krOwnerMap.set(kr.id, kr.owner?.name ?? null)
+    }
+  }
+
+  const enrichedObjectives = baseMetrics.objectives.map(obj => ({
+    ...obj,
+    ownerName: objOwnerMap.get(obj.id) ?? null,
+    keyResults: obj.keyResults.map(kr => ({
+      ...kr,
+      ownerName: krOwnerMap.get(kr.id) ?? null,
+    })),
+  }))
+
+  // Constrói topFocus por owner a partir dos dados brutos do Prisma
+  const topFocusMap = new Map<string, Array<any>>()
+
+  const pushFocus = (ownerId: string, item: any) => {
+    if (!topFocusMap.has(ownerId)) topFocusMap.set(ownerId, [])
+    topFocusMap.get(ownerId)!.push(item)
+  }
+
+  for (const obj of cycle.objectives) {
+    if (obj.ownerId) {
+      pushFocus(obj.ownerId, { type: "objective", title: obj.title, progress: obj.progress })
+    }
+    for (const kr of obj.keyResults) {
+      if (kr.ownerId) {
+        pushFocus(kr.ownerId, { type: "kr", title: kr.title, progress: kr.progress, objectiveTitle: obj.title })
+      }
+      for (const action of kr.actions) {
+        if (action.ownerId && action.status !== "COMPLETED") {
+          pushFocus(action.ownerId, { type: "action", title: action.title, status: action.status, objectiveTitle: obj.title })
+        }
+      }
+    }
+  }
+
+  for (const [id, items] of topFocusMap) {
+    topFocusMap.set(id, items
+      .sort((a: any, b: any) => {
+        if (a.status === "AT_RISK" && b.status !== "AT_RISK") return -1
+        if (b.status === "AT_RISK" && a.status !== "AT_RISK") return 1
+        return (a.progress ?? 0) - (b.progress ?? 0)
+      })
+      .slice(0, 4)
+    )
+  }
+
+  const byOwnerWithFocus = baseMetrics.byOwner.map(owner => ({
+    ...owner,
+    topFocus: owner.ownerId ? (topFocusMap.get(owner.ownerId) ?? []) : [],
+  }))
+
+  return {
+    cycle: baseMetrics.cycle,
+    objectives: enrichedObjectives,
+    byOwner: byOwnerWithFocus,
+  }
 }

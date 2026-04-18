@@ -127,6 +127,10 @@ export async function fetchFinancialMetrics() {
   return trpcQuery("dashboard.financial")
 }
 
+export async function fetchFinancialProjections() {
+  return trpcQuery("dashboard.projections")
+}
+
 export async function fetchOkrMetrics(cycleId?: string) {
   return trpcQuery("dashboard.okr", cycleId ? { cycleId } : undefined)
 }
