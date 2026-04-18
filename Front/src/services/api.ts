@@ -91,6 +91,10 @@ export async function fetchDashboardSummary(cycleId?: string) {
   return trpcQuery("dashboard.summary", cycleId ? { cycleId } : undefined)
 }
 
+export async function fetchMonthlyBreakdown() {
+  return trpcQuery("dashboard.monthly")
+}
+
 export async function fetchFinancialMetrics() {
   return trpcQuery("dashboard.financial")
 }

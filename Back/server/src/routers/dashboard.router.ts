@@ -9,7 +9,7 @@
 
 import { z } from "zod"
 import { router, protectedProcedure } from "../trpc/trpc"
-import { getCompanyMetrics } from "../services/metrics.service"
+import { getCompanyMetrics, getMonthlyBreakdown } from "../services/metrics.service"
 import { getDashboardOkrMetrics } from "../services/okr.service"
 
 export const dashboardRouter = router({
@@ -37,5 +37,10 @@ export const dashboardRouter = router({
 
       return { financial, okr }
     }),
+
+  // Evolução mensal (faturamento, custo, lucro por mês)
+  monthly: protectedProcedure.query(async ({ ctx }) => {
+    return getMonthlyBreakdown(ctx.user.companyId)
+  }),
 
 })
