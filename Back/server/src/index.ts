@@ -18,16 +18,24 @@ app.use(helmet({
 }))
 
 // ── CORS — only allowed origins ────────────────────────────────────────────
+const isProd = process.env.NODE_ENV === "production"
+
 const allowedOrigins = process.env.ALLOWED_ORIGINS
-  ? process.env.ALLOWED_ORIGINS.split(",").map(o => o.trim())
+  ? process.env.ALLOWED_ORIGINS.split(",").map(o => o.trim()).filter(Boolean)
   : ["http://localhost:5173", "http://localhost:3000"]
+
+if (isProd && !process.env.ALLOWED_ORIGINS) {
+  console.error("[SECURITY] ALLOWED_ORIGINS not set in production! CORS will be permissive.")
+}
 
 app.use(cors({
   origin: (origin, cb) => {
-    // Allow requests with no origin (mobile apps, Postman, health checks)
+    // No origin = server-to-server or health check → allow
     if (!origin) return cb(null, true)
     if (allowedOrigins.includes(origin)) return cb(null, true)
-    cb(new Error(`Origin ${origin} not allowed by CORS`))
+    // In development, allow any localhost port for convenience
+    if (!isProd && /^http:\/\/localhost(:\d+)?$/.test(origin)) return cb(null, true)
+    cb(new Error(`Origin '${origin}' not in ALLOWED_ORIGINS`))
   },
   credentials: true,
 }))

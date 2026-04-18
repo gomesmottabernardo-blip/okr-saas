@@ -1,0 +1,16 @@
+services:
+  - type: web
+    name: okr-saas-api
+    runtime: node
+    rootDir: Back/server
+    buildCommand: npm install && npx prisma generate && npm run build
+    startCommand: npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_URL
+        sync: false   # definir manualmente no painel do Render
+      - key: JWT_SECRET
+        sync: false   # definir manualmente no painel do Render
+      - key: ALLOWED_ORIGINS
+        sync: false   # definir com a URL da Vercel após o deploy do frontend
