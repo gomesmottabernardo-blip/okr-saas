@@ -4,7 +4,7 @@ import {
   createCycle, activateCycle,
   createObjective, deleteObjective,
   createKeyResult, deleteKeyResult,
-  createAction, updateAction, deleteAction,
+  createAction, deleteAction,
 } from "../services/api"
 
 interface Props {
@@ -344,40 +344,38 @@ function KeyResultBlock({ kr, users, primaryColor, onRefresh }: { kr: any; users
 // ============================================================================
 
 function ActionRow({ action, onRefresh }: { action: any; onRefresh: () => void }) {
-  async function toggleStatus() {
-    const next: Record<string, string> = {
-      NOT_STARTED: "IN_PROGRESS",
-      IN_PROGRESS: "COMPLETED",
-      COMPLETED: "NOT_STARTED",
-      AT_RISK: "IN_PROGRESS",
-    }
-    await updateAction(action.id, { status: next[action.status] || "IN_PROGRESS" })
-    await onRefresh()
-  }
-
   async function handleDelete() {
     await deleteAction(action.id)
     await onRefresh()
   }
 
-  const statusConfig: Record<string, { label: string; bg: string; color: string }> = {
-    NOT_STARTED: { label: "A fazer", bg: "#f3f4f6", color: "#6b7280" },
-    IN_PROGRESS: { label: "Fazendo", bg: "#dbeafe", color: "#2563eb" },
-    AT_RISK: { label: "Em risco", bg: "#fef3c7", color: "#d97706" },
-    COMPLETED: { label: "Feito", bg: "#dcfce7", color: "#16a34a" },
+  const statusConfig: Record<string, { label: string; bg: string; color: string; icon: string }> = {
+    NOT_STARTED: { label: "A fazer",   bg: "#f3f4f6", color: "#6b7280", icon: "○" },
+    IN_PROGRESS: { label: "Fazendo",   bg: "#dbeafe", color: "#2563eb", icon: "◑" },
+    AT_RISK:     { label: "Em risco",  bg: "#fef3c7", color: "#d97706", icon: "⚠" },
+    COMPLETED:   { label: "Feito",     bg: "#dcfce7", color: "#16a34a", icon: "✓" },
   }
 
   const st = statusConfig[action.status] || statusConfig.NOT_STARTED
   const done = action.status === "COMPLETED"
 
   return (
-    <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "6px 0", borderBottom: "1px solid #fafafa" }}>
-      <button
-        onClick={toggleStatus}
-        style={{ padding: "3px 9px", borderRadius: 5, border: "none", background: st.bg, color: st.color, fontSize: 11, fontWeight: 600, cursor: "pointer", minWidth: 60, flexShrink: 0 }}
+    <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "7px 0", borderBottom: "1px solid #fafafa" }}>
+      {/* Status badge — read-only, sincronizado do sistema externo */}
+      <span
+        title="Status sincronizado do sistema integrado (Notion, etc.)"
+        style={{
+          padding: "3px 9px", borderRadius: 5,
+          background: st.bg, color: st.color,
+          fontSize: 11, fontWeight: 600,
+          minWidth: 68, flexShrink: 0,
+          display: "inline-flex", alignItems: "center", gap: 4,
+          userSelect: "none",
+        }}
       >
+        <span style={{ fontSize: 10 }}>{st.icon}</span>
         {st.label}
-      </button>
+      </span>
       <span style={{ flex: 1, fontSize: 13, color: done ? "#9ca3af" : "#333", textDecoration: done ? "line-through" : "none" }}>
         {action.title}
       </span>

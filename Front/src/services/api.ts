@@ -119,6 +119,10 @@ export async function fetchCycleInsights(cycleId?: string) {
   return trpcQuery("insights.getCycleInsights", cycleId ? { cycleId } : undefined)
 }
 
+export async function sendAlerts(cycleId?: string) {
+  return trpcMutation("alerts.sendOverdueAlerts", cycleId ? { cycleId } : {})
+}
+
 export async function fetchFinancialMetrics() {
   return trpcQuery("dashboard.financial")
 }

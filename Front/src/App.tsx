@@ -21,6 +21,7 @@ export default function App() {
     name: "Strategic OS",
     primaryColor: "#6366f1",
   })
+  const [logoError, setLogoError] = useState(false)
 
   useEffect(() => {
     if (loggedIn) loadBrand()
@@ -53,6 +54,7 @@ export default function App() {
       ...(updates.logoUrl !== undefined && { logoUrl: updates.logoUrl || undefined }),
     }))
     if (updates.primaryColor) applyTheme(updates.primaryColor)
+    setLogoError(false) // reset error so new logo is tried
   }
 
   if (!loggedIn) {
@@ -80,23 +82,25 @@ export default function App() {
         zIndex: 10,
         gap: 0,
       }}>
-        {/* Logo / brand */}
+        {/* Logo / brand — sempre visível */}
         <div style={{ display: "flex", alignItems: "center", gap: 10, marginRight: 36, minWidth: 0 }}>
-          {brand.logoUrl ? (
+          {brand.logoUrl && !logoError ? (
             <img
               src={brand.logoUrl}
               alt={brand.name}
-              style={{ height: 28, maxWidth: 100, objectFit: "contain" }}
-              onError={e => { (e.target as HTMLImageElement).style.display = "none" }}
+              style={{ height: 32, maxWidth: 120, objectFit: "contain" }}
+              onError={() => setLogoError(true)}
             />
           ) : (
             <div style={{
-              width: 28, height: 28, borderRadius: 7,
+              minWidth: 32, height: 32, borderRadius: 8,
               background: primary,
               display: "flex", alignItems: "center", justifyContent: "center",
-              fontSize: 13, fontWeight: 800, color: "white",
+              fontSize: 15, fontWeight: 900, color: "white",
+              padding: "0 10px",
+              letterSpacing: "-0.5px",
             }}>
-              {brand.name.charAt(0).toUpperCase()}
+              {brand.name.split(" ").map(w => w[0]).join("").slice(0, 3).toUpperCase()}
             </div>
           )}
           <span style={{ fontSize: 15, fontWeight: 700, color: "#111", whiteSpace: "nowrap" }}>

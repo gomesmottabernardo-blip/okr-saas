@@ -1,11 +1,13 @@
 import { useEffect, useState } from "react"
-import { fetchCycleInsights, fetchCycles } from "../services/api"
+import { fetchCycleInsights, fetchCycles, sendAlerts } from "../services/api"
 
 export default function Insights() {
   const [data, setData] = useState<any>(null)
   const [cycles, setCycles] = useState<any[]>([])
   const [selectedCycle, setSelectedCycle] = useState<string>("")
   const [loading, setLoading] = useState(true)
+  const [sending, setSending] = useState(false)
+  const [alertResult, setAlertResult] = useState<any>(null)
 
   useEffect(() => { loadCycles() }, [])
   useEffect(() => { load() }, [selectedCycle])
@@ -26,6 +28,18 @@ export default function Insights() {
       setData(d)
     } catch (err) { console.error(err) }
     setLoading(false)
+  }
+
+  async function handleSendAlerts() {
+    setSending(true)
+    setAlertResult(null)
+    try {
+      const result = await sendAlerts(selectedCycle || undefined)
+      setAlertResult(result)
+    } catch (err: any) {
+      setAlertResult({ error: err.message || "Erro ao enviar alertas" })
+    }
+    setSending(false)
   }
 
   if (loading) return <div style={{ padding: 40, color: "#888" }}>Analisando ciclo...</div>
@@ -106,6 +120,72 @@ export default function Insights() {
             ))
           )}
         </Section>
+      </div>
+
+      {/* Botão de Alertas por Email */}
+      <div style={{
+        background: "white",
+        borderRadius: 14,
+        padding: "20px 24px",
+        marginBottom: 32,
+        border: "1px solid #f0f0f0",
+        display: "flex",
+        alignItems: "center",
+        gap: 20,
+        flexWrap: "wrap",
+      }}>
+        <div style={{ flex: 1, minWidth: 220 }}>
+          <div style={{ fontSize: 14, fontWeight: 700, color: "#222", marginBottom: 4 }}>
+            Notificar responsáveis por email
+          </div>
+          <div style={{ fontSize: 13, color: "#888", lineHeight: 1.5 }}>
+            Envia email automático para cada owner com suas tarefas atrasadas ou em risco.
+            O email inclui o contexto do OKR e a data de vencimento.
+          </div>
+        </div>
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 8 }}>
+          <button
+            onClick={handleSendAlerts}
+            disabled={sending}
+            style={{
+              padding: "10px 22px",
+              borderRadius: 8,
+              border: "none",
+              background: sending ? "#e5e7eb" : "#dc2626",
+              color: sending ? "#9ca3af" : "white",
+              fontSize: 14,
+              fontWeight: 600,
+              cursor: sending ? "not-allowed" : "pointer",
+              whiteSpace: "nowrap",
+            }}
+          >
+            {sending ? "Enviando..." : "⚠️ Enviar alertas por email"}
+          </button>
+          {alertResult && (
+            <div style={{ fontSize: 12, textAlign: "right", maxWidth: 280 }}>
+              {alertResult.error ? (
+                <span style={{ color: "#dc2626" }}>
+                  {alertResult.noApiKey
+                    ? "Configure RESEND_API_KEY no Render para ativar emails."
+                    : alertResult.error}
+                </span>
+              ) : alertResult.sent === 0 ? (
+                <span style={{ color: "#6b7280" }}>
+                  Nenhuma tarefa em atraso com responsável encontrada.
+                </span>
+              ) : (
+                <span style={{ color: "#16a34a" }}>
+                  ✓ {alertResult.sent} email{alertResult.sent > 1 ? "s" : ""} enviado{alertResult.sent > 1 ? "s" : ""}
+                  {alertResult.recipients?.length > 0 && (
+                    <span style={{ display: "block", color: "#888", marginTop: 2 }}>
+                      Para: {alertResult.recipients.join(", ")}
+                    </span>
+                  )}
+                </span>
+              )}
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Sugestões para o próximo trimestre */}
