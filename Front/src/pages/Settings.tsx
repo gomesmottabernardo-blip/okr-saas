@@ -1,8 +1,8 @@
-import { useEffect, useState, useRef } from "react"
+import { useEffect, useState } from "react"
 import {
   fetchCompanySettings, updateCompanySettings,
   fetchCompanyUsers, createCompanyUser, updateCompanyUser, removeCompanyUser,
-  updateCompanyLinks,
+  updateCompanyLinks, regenerateUserInvite,
   fetchAllCompanies, setCompanyMaxUsers,
 } from "../services/api"
 
@@ -245,19 +245,23 @@ interface CompanyUser {
   createdAt: string
 }
 
+function setupLink(token: string) {
+  return `${window.location.origin}/?setup=${token}`
+}
+
 function UserManagementSection({ isSuperAdmin, maxUsers, primaryColor }: { isSuperAdmin: boolean; maxUsers: number; primaryColor: string }) {
   const [users, setUsers]         = useState<CompanyUser[]>([])
   const [loading, setLoading]     = useState(true)
   const [showForm, setShowForm]   = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [error, setError]         = useState("")
+  const [inviteLink, setInviteLink] = useState<{ email: string; link: string } | null>(null)
 
   // Create form
-  const [newName, setNewName]         = useState("")
-  const [newEmail, setNewEmail]       = useState("")
-  const [newPassword, setNewPassword] = useState("")
-  const [newRole, setNewRole]         = useState<"ADMIN" | "MEMBER">("MEMBER")
-  const [creating, setCreating]       = useState(false)
+  const [newName, setNewName]   = useState("")
+  const [newEmail, setNewEmail] = useState("")
+  const [newRole, setNewRole]   = useState<"ADMIN" | "MEMBER">("MEMBER")
+  const [creating, setCreating] = useState(false)
 
   // Edit form
   const [editName, setEditName] = useState("")
@@ -275,15 +279,16 @@ function UserManagementSection({ isSuperAdmin, maxUsers, primaryColor }: { isSup
   useEffect(() => { load() }, [])
 
   async function handleCreate() {
-    if (!newName.trim() || !newEmail.trim() || !newPassword.trim()) {
-      setError("Preencha nome, e-mail e senha.")
+    if (!newName.trim() || !newEmail.trim()) {
+      setError("Preencha nome e e-mail.")
       return
     }
     setCreating(true)
     setError("")
     try {
-      await createCompanyUser({ name: newName, email: newEmail, password: newPassword, role: newRole })
-      setNewName(""); setNewEmail(""); setNewPassword(""); setNewRole("MEMBER")
+      const result = await createCompanyUser({ name: newName, email: newEmail, role: newRole })
+      setInviteLink({ email: newEmail, link: setupLink(result.setupToken) })
+      setNewName(""); setNewEmail(""); setNewRole("MEMBER")
       setShowForm(false)
       await load()
     } catch (err: any) {
@@ -323,13 +328,23 @@ function UserManagementSection({ isSuperAdmin, maxUsers, primaryColor }: { isSup
     }
   }
 
+  async function handleRegenerateInvite(userId: string, email: string) {
+    setError("")
+    try {
+      const result = await regenerateUserInvite(userId)
+      setInviteLink({ email, link: setupLink(result.setupToken) })
+    } catch (err: any) {
+      setError(err.message || "Erro ao gerar convite.")
+    }
+  }
+
   const atLimit = !isSuperAdmin && users.length >= maxUsers
 
   return (
     <section>
       <SectionTitle>Usuários da Empresa</SectionTitle>
       <p style={{ fontSize: 13, color: "#888", marginBottom: 22, lineHeight: 1.6 }}>
-        Gerencie quem tem acesso ao Strategic OS da sua empresa.
+        Gerencie quem tem acesso ao Strategic OS. Novos usuários recebem um link de primeiro acesso para criar a própria senha.
         {!isSuperAdmin && ` Limite do plano: ${maxUsers} usuários.`}
       </p>
 
@@ -350,14 +365,10 @@ function UserManagementSection({ isSuperAdmin, maxUsers, primaryColor }: { isSup
             )}
           </div>
           <button
-            onClick={() => { setShowForm(v => !v); setError("") }}
+            onClick={() => { setShowForm(v => !v); setError(""); setInviteLink(null) }}
             disabled={atLimit}
             title={atLimit ? `Limite de ${maxUsers} usuários atingido` : "Adicionar usuário"}
-            style={{
-              ...btnDark,
-              opacity: atLimit ? 0.4 : 1,
-              cursor: atLimit ? "not-allowed" : "pointer",
-            }}
+            style={{ ...btnDark, opacity: atLimit ? 0.4 : 1, cursor: atLimit ? "not-allowed" : "pointer" }}
           >
             + Adicionar
           </button>
@@ -365,10 +376,35 @@ function UserManagementSection({ isSuperAdmin, maxUsers, primaryColor }: { isSup
 
         {error && <div style={{ marginBottom: 14, padding: "10px 14px", background: "#fee2e2", borderRadius: 8, fontSize: 13, color: "#dc2626" }}>{error}</div>}
 
+        {/* Invite link box */}
+        {inviteLink && (
+          <div style={{ marginBottom: 20, padding: 16, background: "#f0fdf4", borderRadius: 10, border: "1px solid #bbf7d0" }}>
+            <div style={{ fontSize: 13, fontWeight: 700, color: "#15803d", marginBottom: 8 }}>
+              ✓ Link de primeiro acesso para {inviteLink.email}
+            </div>
+            <div style={{ fontSize: 12, color: "#166534", marginBottom: 10, lineHeight: 1.5 }}>
+              Copie o link abaixo e envie para o usuário. Ele terá 48h para criar a própria senha.
+              Este link é de uso único.
+            </div>
+            <div style={{ display: "flex", gap: 8 }}>
+              <input readOnly value={inviteLink.link} style={{ ...inputStyle, fontSize: 11, flex: 1, background: "white" }} onClick={e => (e.target as HTMLInputElement).select()} />
+              <button onClick={() => { navigator.clipboard.writeText(inviteLink.link); }} style={{ ...btnDark, fontSize: 12, padding: "8px 14px" }}>
+                Copiar
+              </button>
+            </div>
+            <button onClick={() => setInviteLink(null)} style={{ marginTop: 8, background: "none", border: "none", fontSize: 12, color: "#aaa", cursor: "pointer" }}>
+              Fechar
+            </button>
+          </div>
+        )}
+
         {/* Inline create form */}
         {showForm && (
           <div style={{ background: "#f8f9fb", borderRadius: 10, padding: 20, marginBottom: 20, border: "1px solid #e8e8e8" }}>
-            <div style={{ fontWeight: 600, fontSize: 13, color: "#333", marginBottom: 14 }}>Novo usuário</div>
+            <div style={{ fontWeight: 600, fontSize: 13, color: "#333", marginBottom: 6 }}>Novo usuário</div>
+            <div style={{ fontSize: 12, color: "#aaa", marginBottom: 14 }}>
+              Um link de primeiro acesso será gerado. Não é necessário definir senha agora.
+            </div>
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 12 }}>
               <div>
                 <div style={labelStyle}>Nome *</div>
@@ -378,13 +414,9 @@ function UserManagementSection({ isSuperAdmin, maxUsers, primaryColor }: { isSup
                 <div style={labelStyle}>E-mail *</div>
                 <input value={newEmail} onChange={e => setNewEmail(e.target.value)} placeholder="email@empresa.com" style={inputStyle} type="email" />
               </div>
-              <div>
-                <div style={labelStyle}>Senha temporária *</div>
-                <input value={newPassword} onChange={e => setNewPassword(e.target.value)} placeholder="Mín. 6 caracteres" style={inputStyle} type="password" />
-              </div>
-              <div>
+              <div style={{ gridColumn: "1 / -1" }}>
                 <div style={labelStyle}>Perfil</div>
-                <select value={newRole} onChange={e => setNewRole(e.target.value as any)} style={{ ...inputStyle, cursor: "pointer" }}>
+                <select value={newRole} onChange={e => setNewRole(e.target.value as any)} style={{ ...inputStyle, maxWidth: 220, cursor: "pointer" }}>
                   <option value="MEMBER">Membro</option>
                   <option value="ADMIN">Admin da empresa</option>
                 </select>
@@ -392,7 +424,7 @@ function UserManagementSection({ isSuperAdmin, maxUsers, primaryColor }: { isSup
             </div>
             <div style={{ display: "flex", gap: 8 }}>
               <button onClick={handleCreate} disabled={creating} style={btnPrimary(primaryColor)}>
-                {creating ? "Criando..." : "Criar usuário"}
+                {creating ? "Criando..." : "Criar e gerar link"}
               </button>
               <button onClick={() => { setShowForm(false); setError("") }} style={btnCancel}>Cancelar</button>
             </div>
@@ -447,8 +479,9 @@ function UserManagementSection({ isSuperAdmin, maxUsers, primaryColor }: { isSup
                     <RoleBadge role={u.role} />
                     {u.role !== "SUPER_ADMIN" && (
                       <div style={{ display: "flex", gap: 6, flexShrink: 0 }}>
-                        <button onClick={() => startEdit(u)} style={btnIconSmall}>✏️</button>
-                        <button onClick={() => handleRemove(u.id, u.name || u.email)} style={{ ...btnIconSmall, color: "#dc2626" }}>🗑️</button>
+                        <button onClick={() => handleRegenerateInvite(u.id, u.email)} title="Enviar novo link de acesso" style={btnIconSmall}>🔗</button>
+                        <button onClick={() => startEdit(u)} title="Editar" style={btnIconSmall}>✏️</button>
+                        <button onClick={() => handleRemove(u.id, u.name || u.email)} title="Remover" style={{ ...btnIconSmall, color: "#dc2626" }}>🗑️</button>
                       </div>
                     )}
                   </div>

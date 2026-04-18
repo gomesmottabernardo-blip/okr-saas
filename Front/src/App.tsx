@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react"
 import { isLoggedIn, logout, fetchCompanySettings, getMyRole } from "./services/api"
 import Login from "./pages/Login"
+import SetupPassword from "./pages/SetupPassword"
 import Dashboard from "./pages/Dashboard"
 import OkrManager from "./pages/OkrManager"
 import Insights from "./pages/Insights"
@@ -14,7 +15,13 @@ interface CompanyBrand {
   logoUrl?: string
 }
 
+function getSetupToken(): string | null {
+  const params = new URLSearchParams(window.location.search)
+  return params.get("setup")
+}
+
 export default function App() {
+  const [setupToken] = useState(getSetupToken)
   const [loggedIn, setLoggedIn] = useState(isLoggedIn())
   const [tab, setTab] = useState<Tab>("dashboard")
   const [brand, setBrand] = useState<CompanyBrand>({
@@ -62,6 +69,20 @@ export default function App() {
     }))
     if (updates.primaryColor) applyTheme(updates.primaryColor)
     setLogoError(false) // reset error so new logo is tried
+  }
+
+  // First-access setup flow
+  if (setupToken) {
+    return (
+      <SetupPassword
+        token={setupToken}
+        onDone={() => {
+          // Remove token from URL and go to login
+          window.history.replaceState({}, "", window.location.pathname)
+          window.location.reload()
+        }}
+      />
+    )
   }
 
   if (!loggedIn) {

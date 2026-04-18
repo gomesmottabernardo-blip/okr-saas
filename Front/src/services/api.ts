@@ -234,7 +234,6 @@ export async function fetchCompanyUsers() {
 export async function createCompanyUser(data: {
   name: string
   email: string
-  password: string
   role: "ADMIN" | "MEMBER"
 }) {
   return trpcMutation("settings.createUser", data)
@@ -265,4 +264,18 @@ export async function fetchAllCompanies() {
 
 export async function setCompanyMaxUsers(companyId: string, maxUsers: number) {
   return trpcMutation("settings.setCompanyMaxUsers", { companyId, maxUsers })
+}
+
+export async function regenerateUserInvite(userId: string) {
+  return trpcMutation("settings.regenerateInvite", { userId })
+}
+
+// ── First-access password setup ───────────────────────────────────────────────
+
+export async function validateSetupToken(token: string) {
+  return trpcQuery("auth.validateSetupToken", { token })
+}
+
+export async function setupPassword(token: string, password: string) {
+  return trpcMutation("auth.setupPassword", { token, password })
 }
