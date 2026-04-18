@@ -23,10 +23,13 @@ export default function App() {
   })
   const [logoError, setLogoError] = useState(false)
   const [isAdmin, setIsAdmin] = useState(false)
+  const [isSuperAdmin, setIsSuperAdmin] = useState(false)
 
   useEffect(() => {
     if (loggedIn) {
-      setIsAdmin(getMyRole() === "ADMIN")
+      const role = getMyRole()
+      setIsSuperAdmin(role === "SUPER_ADMIN")
+      setIsAdmin(role === "ADMIN" || role === "SUPER_ADMIN")
       loadBrand()
     }
   }, [loggedIn])
@@ -133,7 +136,7 @@ export default function App() {
         {tab === "dashboard" && <Dashboard isAdmin={isAdmin} />}
         {tab === "okrs" && <OkrManager primaryColor={primary} />}
         {tab === "insights" && <Insights isAdmin={isAdmin} />}
-        {tab === "settings" && <Settings onSave={handleBrandUpdate} />}
+        {tab === "settings" && <Settings onSave={handleBrandUpdate} isAdmin={isAdmin} isSuperAdmin={isSuperAdmin} />}
       </main>
     </div>
   )

@@ -47,7 +47,11 @@ export const companyRouter = router({
   getSettings: protectedProcedure.query(async ({ ctx }) => {
     return prisma.company.findFirst({
       where: { id: ctx.user.companyId },
-      select: { id: true, name: true, slug: true, domain: true, primaryColor: true, logoUrl: true },
+      select: {
+        id: true, name: true, slug: true, domain: true,
+        primaryColor: true, logoUrl: true, maxUsers: true,
+        site: true, instagram: true, linkedin: true, otherLinks: true,
+      },
     })
   }),
 

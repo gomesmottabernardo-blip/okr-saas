@@ -87,12 +87,14 @@ export function isLoggedIn(): boolean {
   return !!getToken()
 }
 
-export function getMyRole(): "ADMIN" | "MEMBER" {
+export function getMyRole(): "SUPER_ADMIN" | "ADMIN" | "MEMBER" {
   const token = localStorage.getItem("token")
   if (!token) return "MEMBER"
   try {
     const payload = JSON.parse(atob(token.split(".")[1]))
-    return payload.role === "ADMIN" ? "ADMIN" : "MEMBER"
+    if (payload.role === "SUPER_ADMIN") return "SUPER_ADMIN"
+    if (payload.role === "ADMIN") return "ADMIN"
+    return "MEMBER"
   } catch {
     return "MEMBER"
   }
@@ -221,4 +223,46 @@ export async function updateAction(id: string, data: any) {
 
 export async function deleteAction(id: string) {
   return trpcMutation("okr.deleteAction", { id })
+}
+
+// ── Settings: User Management ─────────────────────────────────────────────────
+
+export async function fetchCompanyUsers() {
+  return trpcQuery("settings.listUsers")
+}
+
+export async function createCompanyUser(data: {
+  name: string
+  email: string
+  password: string
+  role: "ADMIN" | "MEMBER"
+}) {
+  return trpcMutation("settings.createUser", data)
+}
+
+export async function updateCompanyUser(id: string, data: { name?: string; role?: "ADMIN" | "MEMBER" }) {
+  return trpcMutation("settings.updateUser", { id, ...data })
+}
+
+export async function removeCompanyUser(id: string) {
+  return trpcMutation("settings.removeUser", { id })
+}
+
+export async function updateCompanyLinks(data: {
+  site?: string
+  instagram?: string
+  linkedin?: string
+  otherLinks?: string
+}) {
+  return trpcMutation("settings.updateLinks", data)
+}
+
+// ── Settings: Super Admin ─────────────────────────────────────────────────────
+
+export async function fetchAllCompanies() {
+  return trpcQuery("settings.listAllCompanies")
+}
+
+export async function setCompanyMaxUsers(companyId: string, maxUsers: number) {
+  return trpcMutation("settings.setCompanyMaxUsers", { companyId, maxUsers })
 }

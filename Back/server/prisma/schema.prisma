@@ -44,8 +44,9 @@ datasource db {
 // ============================================================================
 
 enum Role {
-  ADMIN
-  MEMBER
+  SUPER_ADMIN  // Dono da plataforma — acesso irrestrito a todas as empresas
+  ADMIN        // Admin da empresa — limitado por maxUsers
+  MEMBER       // Usuário comum
 }
 
 enum CycleStatus {
@@ -105,8 +106,13 @@ model Company {
   domain       String?
   primaryColor String?
   logoUrl      String?
+  maxUsers     Int      @default(10)
+  site         String?
+  instagram    String?
+  linkedin     String?
+  otherLinks   String?
   createdAt    DateTime @default(now())
-  updatedAt DateTime @default(now()) @updatedAt
+  updatedAt    DateTime @default(now()) @updatedAt
 
   // Relações existentes (preservadas)
   users                 User[]
