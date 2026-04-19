@@ -20,13 +20,13 @@ app.use(helmet({
 // ── CORS — only allowed origins ────────────────────────────────────────────
 const isProd = process.env.NODE_ENV === "production"
 
+const PROD_ORIGINS = ["https://okr-saas.vercel.app"]
+
 const allowedOrigins = process.env.ALLOWED_ORIGINS
   ? process.env.ALLOWED_ORIGINS.split(",").map(o => o.trim()).filter(Boolean)
-  : ["http://localhost:5173", "http://localhost:3000"]
-
-if (isProd && !process.env.ALLOWED_ORIGINS) {
-  console.error("[SECURITY] ALLOWED_ORIGINS not set in production! CORS will be permissive.")
-}
+  : isProd
+    ? PROD_ORIGINS
+    : ["http://localhost:5173", "http://localhost:3000"]
 
 app.use(cors({
   origin: (origin, cb) => {
