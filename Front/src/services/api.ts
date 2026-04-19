@@ -270,6 +270,10 @@ export async function regenerateUserInvite(userId: string) {
   return trpcMutation("settings.regenerateInvite", { userId })
 }
 
+export async function autoDetectLogo(domain: string) {
+  return trpcMutation("company.autoDetectLogo", { domain })
+}
+
 // ── First-access password setup ───────────────────────────────────────────────
 
 export async function validateSetupToken(token: string) {

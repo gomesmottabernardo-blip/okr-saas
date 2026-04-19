@@ -1,5 +1,5 @@
 import { prisma } from "../lib/prisma"
-import { getActiveCycle } from "./okr.service"
+import { resolveTargetCycleId } from "./okr.service"
 
 interface SuggestionItem {
   id: string
@@ -9,12 +9,7 @@ interface SuggestionItem {
 }
 
 export async function getCycleInsights(companyId: string, cycleId?: string) {
-  let targetCycleId = cycleId
-  if (!targetCycleId) {
-    const active = await getActiveCycle(companyId)
-    targetCycleId = active?.id
-  }
-
+  const targetCycleId = await resolveTargetCycleId(companyId, cycleId)
   if (!targetCycleId) return null
 
   const cycle = await prisma.cycle.findFirst({

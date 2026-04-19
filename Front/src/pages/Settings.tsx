@@ -3,30 +3,13 @@ import {
   fetchCompanySettings, updateCompanySettings,
   fetchCompanyUsers, createCompanyUser, updateCompanyUser, removeCompanyUser,
   updateCompanyLinks, regenerateUserInvite,
-  fetchAllCompanies, setCompanyMaxUsers,
+  fetchAllCompanies, setCompanyMaxUsers, autoDetectLogo,
 } from "../services/api"
 
 interface Props {
   onSave: (settings: { primaryColor?: string; logoUrl?: string; name?: string }) => void
   isAdmin?: boolean
   isSuperAdmin?: boolean
-}
-
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:4000"
-
-async function trpcMut(path: string, input: any) {
-  const token = localStorage.getItem("token")
-  const res = await fetch(`${API_URL}/trpc/${path}`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-    },
-    body: JSON.stringify(input),
-  })
-  const json = await res.json()
-  if (!res.ok) throw new Error(json?.error?.message || `Erro ${res.status}`)
-  return json.result?.data ?? json
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -75,7 +58,7 @@ export default function Settings({ onSave, isAdmin = false, isSuperAdmin = false
     setDetecting(true)
     setDetectResult(null)
     try {
-      const result = await trpcMut("company.autoDetectLogo", { domain: domain.trim() })
+      const result = await autoDetectLogo(domain.trim())
       setDetectResult(result)
       if (result.logoUrl) {
         setLogoUrl(result.logoUrl)

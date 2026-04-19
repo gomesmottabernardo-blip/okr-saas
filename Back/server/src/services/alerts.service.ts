@@ -1,5 +1,5 @@
 import { prisma } from "../lib/prisma"
-import { getActiveCycle } from "./okr.service"
+import { resolveTargetCycleId } from "./okr.service"
 
 export interface AlertEmailResult {
   sent: number
@@ -23,11 +23,7 @@ export async function sendOverdueAlertEmails(
     select: { name: true, primaryColor: true },
   })
 
-  let targetCycleId = cycleId
-  if (!targetCycleId) {
-    const active = await getActiveCycle(companyId)
-    targetCycleId = active?.id
-  }
+  const targetCycleId = await resolveTargetCycleId(companyId, cycleId)
   if (!targetCycleId) throw new Error("Nenhum ciclo ativo encontrado")
 
   const now = new Date()

@@ -484,6 +484,16 @@ export async function recalculateFullCycle(
 // Users
 // ----------------------------------------------------------------------------
 
+// Retorna cycleId explícito ou o ID do ciclo ativo da empresa
+export async function resolveTargetCycleId(
+  companyId: string,
+  cycleId?: string
+): Promise<string | undefined> {
+  if (cycleId) return cycleId
+  const active = await getActiveCycle(companyId)
+  return active?.id
+}
+
 export async function listUsers(companyId: string) {
   return prisma.user.findMany({
     where: { companyId },
@@ -498,11 +508,7 @@ export async function listUsers(companyId: string) {
 
 export async function getOverdueAlerts(companyId: string, cycleId?: string) {
   const now = new Date()
-  let targetCycleId = cycleId
-  if (!targetCycleId) {
-    const active = await getActiveCycle(companyId)
-    targetCycleId = active?.id
-  }
+  const targetCycleId = await resolveTargetCycleId(companyId, cycleId)
 
   const where: any = {
     companyId,
@@ -554,16 +560,8 @@ export async function getDashboardOkrMetrics(
   companyId: string,
   cycleId?: string
 ) {
-  // Se não informou cycle, pega o ativo
-  let targetCycleId = cycleId
-  if (!targetCycleId) {
-    const active = await getActiveCycle(companyId)
-    targetCycleId = active?.id
-  }
-
-  if (!targetCycleId) {
-    return null // Nenhum ciclo ativo
-  }
+  const targetCycleId = await resolveTargetCycleId(companyId, cycleId)
+  if (!targetCycleId) return null
 
   const cycle = await prisma.cycle.findFirst({
     where: { id: targetCycleId, companyId },
