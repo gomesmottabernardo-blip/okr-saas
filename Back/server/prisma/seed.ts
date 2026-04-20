@@ -5,7 +5,7 @@ import bcrypt from "bcrypt";
 const prisma = new PrismaClient();
 
 async function main() {
-  console.log("🌱 Iniciando seed...");
+  console.log("🌱 Iniciando seed com dados reais da Funil Faixa Preta...");
 
   // Limpa dados existentes (ordem inversa das dependências)
   await prisma.action.deleteMany();
@@ -55,45 +55,128 @@ async function main() {
     },
   });
 
-  console.log("👤 Usuários criados:", bernardo.email, "|", igor.email);
+  const duda = await prisma.user.create({
+    data: {
+      name: "Duda",
+      email: "duda@funilfaixapreta.com",
+      password: await hash("123456"),
+      role: "MEMBER",
+      companyId: company.id,
+    },
+  });
 
-  // ── Clientes simulados ───────────────────────────────────────────────────────
+  const francimario = await prisma.user.create({
+    data: {
+      name: "Francimário",
+      email: "francimario@funilfaixapreta.com",
+      password: await hash("123456"),
+      role: "MEMBER",
+      companyId: company.id,
+    },
+  });
 
-  const services = ["Gestão de Tráfego", "IA", "Consultoria", "Gestão de Tráfego", "IA"];
-  const clientData = Array.from({ length: 40 }, (_, i) => ({
-    name: `Cliente ${i + 1}`,
-    service: services[i % services.length],
-    monthlyValue: 1500 + (i % 5) * 500,
-    startDate: new Date(2025, i % 12, 1),
-    active: i < 36,
-    companyId: company.id,
-  }));
+  const alan = await prisma.user.create({
+    data: {
+      name: "Alan",
+      email: "alan@funilfaixapreta.com",
+      password: await hash("123456"),
+      role: "MEMBER",
+      companyId: company.id,
+    },
+  });
 
-  await prisma.client.createMany({ data: clientData });
-  console.log("👥 Clientes criados: 40");
+  const pedro = await prisma.user.create({
+    data: {
+      name: "Pedro",
+      email: "pedro@funilfaixapreta.com",
+      password: await hash("123456"),
+      role: "MEMBER",
+      companyId: company.id,
+    },
+  });
 
-  // ── Transações financeiras (últimos 6 meses) ─────────────────────────────────
+  console.log("👤 Usuários criados: Bernardo | Igor | Duda | Francimário | Alan | Pedro");
 
-  const transactions = [];
-  for (let m = 5; m >= 0; m--) {
-    const date = new Date(2026, 3 - m, 15);
-    transactions.push(
-      {
-        description: `MRR — Mês ${date.toLocaleString("pt-BR", { month: "short", year: "numeric" })}`,
-        type: "REVENUE",
-        amount: 72000 + m * 8000,
-        date,
-        companyId: company.id,
-      },
-      {
-        description: "Salários e Operacional",
-        type: "EXPENSE",
-        amount: 28000 + m * 1000,
-        date: new Date(date.getFullYear(), date.getMonth(), 5),
-        companyId: company.id,
-      },
-    );
-  }
+  // ── Clientes reais da FFP (Notion) ───────────────────────────────────────────
+
+  await prisma.client.createMany({
+    data: [
+      // Baby Gym — Franqueadora + 17 franquias
+      { name: "Baby Gym Franqueadora",       service: "Gestão de Tráfego", monthlyValue: 4000, startDate: new Date("2024-01-01"), active: true,  companyId: company.id },
+      { name: "Baby Gym Goiânia",            service: "Gestão de Tráfego", monthlyValue: 1500, startDate: new Date("2024-03-01"), active: true,  companyId: company.id },
+      { name: "Baby Gym Santa Maria",        service: "Gestão de Tráfego", monthlyValue: 1500, startDate: new Date("2024-03-01"), active: true,  companyId: company.id },
+      { name: "Baby Gym Vitória",            service: "Gestão de Tráfego", monthlyValue: 1500, startDate: new Date("2024-04-01"), active: true,  companyId: company.id },
+      { name: "Baby Gym Imperatriz",         service: "Gestão de Tráfego", monthlyValue: 1500, startDate: new Date("2024-04-01"), active: true,  companyId: company.id },
+      { name: "Baby Gym Ubá",                service: "Gestão de Tráfego", monthlyValue: 1200, startDate: new Date("2024-05-01"), active: true,  companyId: company.id },
+      { name: "Baby Gym Cuiabá",             service: "Gestão de Tráfego", monthlyValue: 1500, startDate: new Date("2024-06-01"), active: true,  companyId: company.id },
+      { name: "Baby Gym Divinópolis",        service: "Gestão de Tráfego", monthlyValue: 1200, startDate: new Date("2024-06-01"), active: true,  companyId: company.id },
+      { name: "Baby Gym Jardins",            service: "Gestão de Tráfego", monthlyValue: 1800, startDate: new Date("2024-07-01"), active: true,  companyId: company.id },
+      { name: "Baby Gym Morumbi",            service: "Gestão de Tráfego", monthlyValue: 1800, startDate: new Date("2024-07-01"), active: true,  companyId: company.id },
+      { name: "Baby Gym Brooklin",           service: "Gestão de Tráfego", monthlyValue: 1800, startDate: new Date("2024-08-01"), active: true,  companyId: company.id },
+      { name: "Baby Gym BH",                 service: "Gestão de Tráfego", monthlyValue: 1500, startDate: new Date("2024-08-01"), active: true,  companyId: company.id },
+      { name: "Baby Gym Aracaju",            service: "Gestão de Tráfego", monthlyValue: 1200, startDate: new Date("2024-09-01"), active: true,  companyId: company.id },
+      { name: "Baby Gym POA",                service: "Gestão de Tráfego", monthlyValue: 1500, startDate: new Date("2024-09-01"), active: true,  companyId: company.id },
+      { name: "Baby Gym Rio Verde",          service: "Gestão de Tráfego", monthlyValue: 1200, startDate: new Date("2024-10-01"), active: true,  companyId: company.id },
+      { name: "Baby Gym Sinop",              service: "Gestão de Tráfego", monthlyValue: 1200, startDate: new Date("2024-10-01"), active: true,  companyId: company.id },
+      { name: "Baby Gym Nilo",               service: "Gestão de Tráfego", monthlyValue: 1200, startDate: new Date("2024-11-01"), active: true,  companyId: company.id },
+      { name: "Baby Gym Alphaville",         service: "Gestão de Tráfego", monthlyValue: 1800, startDate: new Date("2024-11-01"), active: true,  companyId: company.id },
+      // Outros clientes
+      { name: "Orthopride",                  service: "Gestão de Tráfego", monthlyValue: 3500, startDate: new Date("2024-02-01"), active: true,  companyId: company.id },
+      { name: "Jaby",                        service: "Gestão de Tráfego", monthlyValue: 2500, startDate: new Date("2024-05-01"), active: true,  companyId: company.id },
+      { name: "Caza",                        service: "Gestão de Tráfego", monthlyValue: 2000, startDate: new Date("2024-06-01"), active: true,  companyId: company.id },
+      { name: "Sergue",                      service: "IA",                monthlyValue: 1800, startDate: new Date("2025-10-01"), active: true,  companyId: company.id },
+      { name: "Aldeia",                      service: "IA",                monthlyValue: 1500, startDate: new Date("2025-11-01"), active: true,  companyId: company.id },
+      { name: "DDP",                         service: "Gestão de Tráfego", monthlyValue: 2000, startDate: new Date("2024-07-01"), active: true,  companyId: company.id },
+      { name: "Atchim",                      service: "IA",                monthlyValue: 1700, startDate: new Date("2026-04-01"), active: true,  companyId: company.id },
+      { name: "Rio ET",                      service: "Consultoria",       monthlyValue: 2500, startDate: new Date("2024-09-01"), active: true,  companyId: company.id },
+      { name: "Samsonite",                   service: "Gestão de Tráfego", monthlyValue: 3000, startDate: new Date("2024-03-01"), active: true,  companyId: company.id },
+      { name: "Sensus Spa",                  service: "Gestão de Tráfego", monthlyValue: 1500, startDate: new Date("2024-08-01"), active: true,  companyId: company.id },
+      { name: "Lavoro Seguros",              service: "Consultoria",       monthlyValue: 2000, startDate: new Date("2025-01-01"), active: true,  companyId: company.id },
+      { name: "SB Seguros",                  service: "Consultoria",       monthlyValue: 1800, startDate: new Date("2025-02-01"), active: true,  companyId: company.id },
+      { name: "Kempinski",                   service: "Gestão de Tráfego", monthlyValue: 3000, startDate: new Date("2024-10-01"), active: true,  companyId: company.id },
+      { name: "Revivere",                    service: "Gestão de Tráfego", monthlyValue: 1500, startDate: new Date("2025-03-01"), active: true,  companyId: company.id },
+      { name: "SANDUPARK",                   service: "Gestão de Tráfego", monthlyValue: 2000, startDate: new Date("2025-04-01"), active: true,  companyId: company.id },
+      { name: "ZAYYA",                       service: "IA",                monthlyValue: 1800, startDate: new Date("2025-09-01"), active: true,  companyId: company.id },
+      { name: "Elister",                     service: "Gestão de Tráfego", monthlyValue: 1500, startDate: new Date("2025-05-01"), active: true,  companyId: company.id },
+      { name: "Traktion",                    service: "IA",                monthlyValue: 2000, startDate: new Date("2025-08-01"), active: true,  companyId: company.id },
+      { name: "Inter Academy Brasília",      service: "Gestão de Tráfego", monthlyValue: 2000, startDate: new Date("2025-06-01"), active: true,  companyId: company.id },
+      { name: "Malafaia Natação",            service: "Gestão de Tráfego", monthlyValue: 1500, startDate: new Date("2025-07-01"), active: true,  companyId: company.id },
+      { name: "Gustavo Asmar",               service: "Consultoria",       monthlyValue: 2000, startDate: new Date("2025-10-01"), active: true,  companyId: company.id },
+    ],
+  });
+  console.log("👥 Clientes reais criados: 39");
+
+  // ── Transações financeiras (histórico + Q2 2026) ─────────────────────────────
+  // Dados reais Q2: Abr Fat R$51K / Custo R$33K | Mai R$55K / R$34K | Jun R$55K / R$36K
+
+  const financialData = [
+    // Histórico pré-Q2 (crescimento gradual)
+    { month: new Date("2025-11-15"), revenue: 37000, expense: 26000 },
+    { month: new Date("2025-12-15"), revenue: 39000, expense: 27000 },
+    { month: new Date("2026-01-15"), revenue: 41000, expense: 28000 },
+    { month: new Date("2026-02-15"), revenue: 44000, expense: 30000 },
+    { month: new Date("2026-03-15"), revenue: 47000, expense: 31000 },
+    // Q2 2026 — metas reais do Notion
+    { month: new Date("2026-04-15"), revenue: 51000, expense: 33000 },
+  ];
+
+  const transactions = financialData.flatMap(({ month, revenue, expense }) => [
+    {
+      description: `Faturamento — ${month.toLocaleString("pt-BR", { month: "long", year: "numeric" })}`,
+      type: "REVENUE",
+      amount: revenue,
+      date: month,
+      companyId: company.id,
+    },
+    {
+      description: "Custos Operacionais",
+      type: "EXPENSE",
+      amount: expense,
+      date: new Date(month.getFullYear(), month.getMonth(), 5),
+      companyId: company.id,
+    },
+  ]);
+
   await prisma.financialTransaction.createMany({ data: transactions });
   console.log("💰 Transações financeiras criadas:", transactions.length);
 
@@ -108,15 +191,15 @@ async function main() {
       companyId: company.id,
     },
   });
-  console.log("📅 Ciclo criado:", cycle.label);
+  console.log("📅 Ciclo criado:", cycle.label, "| Meta do Tri: Lucro R$55K");
 
-  // ── Objectives, Key Results e Actions ─────────────────────────────────────────
+  // ── OBJ 1: Faturamento R$165K no Q2 ──────────────────────────────────────────
+  // Squad: Funil de Vendas (Igor)
 
-  // OBJ 1: Crescimento de Receita
   const obj1 = await prisma.objective.create({
     data: {
-      title: "Crescimento de Receita",
-      description: "Atingir R$182k de MRR até o fim do Q2",
+      title: "Faturar R$165K no Q2 2026",
+      description: "OKR Financeiro — Meta trimestral de faturamento total. Squad: Funil de Vendas.",
       cycleId: cycle.id,
       companyId: company.id,
       ownerId: igor.id,
@@ -124,146 +207,345 @@ async function main() {
     },
   });
 
-  const kr1 = await prisma.keyResult.create({
+  const kr1_1 = await prisma.keyResult.create({
     data: {
-      title: "Faturar R$182k no trimestre",
+      title: "Faturamento Abril ≥ R$51K",
       progressMode: "METRIC_BASED",
-      startValue: 72000,
-      currentValue: 96000,
-      targetValue: 182000,
-      unit: "R$",
-      objectiveId: obj1.id,
-      companyId: company.id,
-      ownerId: igor.id,
-      sortOrder: 1,
-    },
-  });
-
-  const kr2 = await prisma.keyResult.create({
-    data: {
-      title: "Manter ticket médio acima de R$2.000",
-      progressMode: "METRIC_BASED",
-      startValue: 1800,
-      currentValue: 2100,
-      targetValue: 2000,
-      unit: "R$",
-      objectiveId: obj1.id,
-      companyId: company.id,
-      sortOrder: 2,
-    },
-  });
-
-  await prisma.action.createMany({
-    data: [
-      { title: "Prospectar 20 novos clientes", keyResultId: kr1.id, companyId: company.id, ownerId: igor.id, status: "IN_PROGRESS", dueDate: new Date("2026-05-15") },
-      { title: "Campanha de reativação de inativos", keyResultId: kr1.id, companyId: company.id, status: "NOT_STARTED", dueDate: new Date("2026-05-30") },
-      { title: "Revisão de precificação", keyResultId: kr2.id, companyId: company.id, ownerId: igor.id, status: "COMPLETED", completedAt: new Date("2026-04-10") },
-    ],
-  });
-
-  // OBJ 2: Escalar Time e Operações
-  const obj2 = await prisma.objective.create({
-    data: {
-      title: "Escalar Time e Operações",
-      description: "Contratar especialistas e reduzir churn",
-      cycleId: cycle.id,
-      companyId: company.id,
-      sortOrder: 2,
-    },
-  });
-
-  const kr3 = await prisma.keyResult.create({
-    data: {
-      title: "Contratar 2 especialistas de tráfego",
-      progressMode: "ACTION_BASED",
-      targetValue: 2,
-      currentValue: 0,
       startValue: 0,
-      objectiveId: obj2.id,
+      currentValue: 47000,
+      targetValue: 51000,
+      unit: "R$",
+      objectiveId: obj1.id,
       companyId: company.id,
       ownerId: igor.id,
       sortOrder: 1,
     },
   });
 
-  const kr4 = await prisma.keyResult.create({
+  const kr1_2 = await prisma.keyResult.create({
     data: {
-      title: "Reduzir churn para menos de 5%",
+      title: "Faturamento Maio ≥ R$55K",
       progressMode: "METRIC_BASED",
-      startValue: 12,
-      currentValue: 8,
-      targetValue: 5,
-      unit: "%",
-      objectiveId: obj2.id,
+      startValue: 0,
+      currentValue: 0,
+      targetValue: 55000,
+      unit: "R$",
+      objectiveId: obj1.id,
       companyId: company.id,
+      ownerId: igor.id,
       sortOrder: 2,
     },
   });
 
-  await prisma.action.createMany({
-    data: [
-      { title: "Abrir vagas no LinkedIn", keyResultId: kr3.id, companyId: company.id, status: "COMPLETED", completedAt: new Date("2026-04-05") },
-      { title: "Entrevistar candidatos", keyResultId: kr3.id, companyId: company.id, ownerId: igor.id, status: "IN_PROGRESS", dueDate: new Date("2026-05-01") },
-      { title: "Onboarding dos novos contratados", keyResultId: kr3.id, companyId: company.id, status: "NOT_STARTED", dueDate: new Date("2026-06-01") },
-      { title: "Criar ritual de check-in mensal com clientes", keyResultId: kr4.id, companyId: company.id, status: "IN_PROGRESS", dueDate: new Date("2026-04-30") },
-      { title: "Mapear clientes com risco de cancelamento", keyResultId: kr4.id, companyId: company.id, status: "AT_RISK", dueDate: new Date("2026-04-20") },
-    ],
-  });
-
-  // OBJ 3: Fortalecer Presença Digital
-  const obj3 = await prisma.objective.create({
+  const kr1_3 = await prisma.keyResult.create({
     data: {
-      title: "Fortalecer Presença Digital",
-      description: "Crescer alcance e autoridade da marca FFP",
-      cycleId: cycle.id,
+      title: "Faturamento Junho ≥ R$55K",
+      progressMode: "METRIC_BASED",
+      startValue: 0,
+      currentValue: 0,
+      targetValue: 55000,
+      unit: "R$",
+      objectiveId: obj1.id,
       companyId: company.id,
+      ownerId: igor.id,
       sortOrder: 3,
     },
   });
 
-  const kr5 = await prisma.keyResult.create({
+  await prisma.action.createMany({
+    data: [
+      { title: "Fechar 3 novos contratos até 30/04", keyResultId: kr1_1.id, companyId: company.id, ownerId: francimario.id, status: "IN_PROGRESS", dueDate: new Date("2026-04-30") },
+      { title: "Reativar 2 clientes inativos", keyResultId: kr1_1.id, companyId: company.id, ownerId: pedro.id, status: "IN_PROGRESS", dueDate: new Date("2026-04-28") },
+      { title: "Lançar campanha de upsell para base Baby Gym", keyResultId: kr1_2.id, companyId: company.id, ownerId: igor.id, status: "NOT_STARTED", dueDate: new Date("2026-05-10") },
+      { title: "Prospectar 10 novas franquias Baby Gym", keyResultId: kr1_3.id, companyId: company.id, ownerId: francimario.id, status: "NOT_STARTED", dueDate: new Date("2026-06-15") },
+    ],
+  });
+
+  // ── OBJ 2: MRR — Escalar para R$56K até Junho ────────────────────────────────
+  // Squad: Captação de Clientes (Alan/Francimário)
+
+  const obj2 = await prisma.objective.create({
     data: {
-      title: "Alcançar 10k seguidores no Instagram",
-      progressMode: "METRIC_BASED",
-      startValue: 6500,
-      currentValue: 7800,
-      targetValue: 10000,
-      unit: "seguidores",
-      objectiveId: obj3.id,
+      title: "Escalar MRR para R$56K até Junho",
+      description: "Crescimento de receita recorrente mensal. Squads: Captação de Clientes e Eficiência SDR.",
+      cycleId: cycle.id,
       companyId: company.id,
+      ownerId: alan.id,
+      sortOrder: 2,
+    },
+  });
+
+  const kr2_1 = await prisma.keyResult.create({
+    data: {
+      title: "MRR Abril ≥ R$47K",
+      progressMode: "METRIC_BASED",
+      startValue: 44000,
+      currentValue: 46000,
+      targetValue: 47000,
+      unit: "R$",
+      objectiveId: obj2.id,
+      companyId: company.id,
+      ownerId: alan.id,
       sortOrder: 1,
     },
   });
 
-  const kr6 = await prisma.keyResult.create({
+  const kr2_2 = await prisma.keyResult.create({
     data: {
-      title: "Publicar 24 cases de sucesso no trimestre",
-      progressMode: "ACTION_BASED",
-      targetValue: 24,
+      title: "MRR Maio ≥ R$51K",
+      progressMode: "METRIC_BASED",
+      startValue: 47000,
       currentValue: 0,
-      startValue: 0,
-      objectiveId: obj3.id,
+      targetValue: 51000,
+      unit: "R$",
+      objectiveId: obj2.id,
       companyId: company.id,
+      ownerId: alan.id,
       sortOrder: 2,
+    },
+  });
+
+  const kr2_3 = await prisma.keyResult.create({
+    data: {
+      title: "MRR Junho ≥ R$56K",
+      progressMode: "METRIC_BASED",
+      startValue: 51000,
+      currentValue: 0,
+      targetValue: 56000,
+      unit: "R$",
+      objectiveId: obj2.id,
+      companyId: company.id,
+      ownerId: alan.id,
+      sortOrder: 3,
     },
   });
 
   await prisma.action.createMany({
     data: [
-      { title: "Contratar social media freelancer", keyResultId: kr5.id, companyId: company.id, status: "COMPLETED", completedAt: new Date("2026-04-03") },
-      { title: "Calendário de conteúdo Q2", keyResultId: kr5.id, companyId: company.id, status: "IN_PROGRESS", dueDate: new Date("2026-04-25") },
-      { title: "Coletar depoimentos de 10 clientes", keyResultId: kr6.id, companyId: company.id, status: "IN_PROGRESS", dueDate: new Date("2026-05-10") },
-      { title: "Produzir 6 vídeos de case", keyResultId: kr6.id, companyId: company.id, status: "NOT_STARTED", dueDate: new Date("2026-05-31") },
-      { title: "Agendar publicações", keyResultId: kr6.id, companyId: company.id, status: "NOT_STARTED", dueDate: new Date("2026-06-15") },
+      { title: "Estruturar cadência de prospecção semanal", keyResultId: kr2_1.id, companyId: company.id, ownerId: francimario.id, status: "IN_PROGRESS", dueDate: new Date("2026-04-25") },
+      { title: "Revisão de contratos com reajuste de preço", keyResultId: kr2_1.id, companyId: company.id, ownerId: igor.id, status: "COMPLETED", completedAt: new Date("2026-04-10") },
+      { title: "Ativar pipeline SDR para Maio", keyResultId: kr2_2.id, companyId: company.id, ownerId: francimario.id, status: "NOT_STARTED", dueDate: new Date("2026-04-30") },
+      { title: "Fechar 5 novos clientes Tráfego em Maio/Junho", keyResultId: kr2_3.id, companyId: company.id, ownerId: alan.id, status: "NOT_STARTED", dueDate: new Date("2026-06-20") },
     ],
   });
 
-  console.log("🎯 OKRs criados: 3 objectives, 6 key results, 13 actions");
+  // ── OBJ 3: Vertical de IA — R$10K MRR até Maio ───────────────────────────────
+  // Squad: Melhorias Funil Aplicação (Duda)
+
+  const obj3 = await prisma.objective.create({
+    data: {
+      title: "Escalar Vertical de IA para R$10K/mês",
+      description: "Lançar e escalar produto de IA para clientes FFP. Squad: Melhorias Funil Aplicação.",
+      cycleId: cycle.id,
+      companyId: company.id,
+      ownerId: duda.id,
+      sortOrder: 3,
+    },
+  });
+
+  const kr3_1 = await prisma.keyResult.create({
+    data: {
+      title: "IA Abril — R$5K com 3 clientes ativos",
+      progressMode: "METRIC_BASED",
+      startValue: 0,
+      currentValue: 3500,
+      targetValue: 5000,
+      unit: "R$",
+      objectiveId: obj3.id,
+      companyId: company.id,
+      ownerId: duda.id,
+      sortOrder: 1,
+    },
+  });
+
+  const kr3_2 = await prisma.keyResult.create({
+    data: {
+      title: "IA Maio — R$10K (dobrar base)",
+      progressMode: "METRIC_BASED",
+      startValue: 5000,
+      currentValue: 0,
+      targetValue: 10000,
+      unit: "R$",
+      objectiveId: obj3.id,
+      companyId: company.id,
+      ownerId: duda.id,
+      sortOrder: 2,
+    },
+  });
+
+  const kr3_3 = await prisma.keyResult.create({
+    data: {
+      title: "IA Junho — manter R$10K",
+      progressMode: "METRIC_BASED",
+      startValue: 10000,
+      currentValue: 0,
+      targetValue: 10000,
+      unit: "R$",
+      objectiveId: obj3.id,
+      companyId: company.id,
+      ownerId: duda.id,
+      sortOrder: 3,
+    },
+  });
+
+  await prisma.action.createMany({
+    data: [
+      { title: "Onboarding Atchim no produto IA", keyResultId: kr3_1.id, companyId: company.id, ownerId: duda.id, status: "IN_PROGRESS", dueDate: new Date("2026-04-25") },
+      { title: "Criar case de sucesso Sergue + Aldeia", keyResultId: kr3_1.id, companyId: company.id, ownerId: duda.id, status: "IN_PROGRESS", dueDate: new Date("2026-04-30") },
+      { title: "Lançar oferta IA para 10 clientes tráfego", keyResultId: kr3_2.id, companyId: company.id, ownerId: duda.id, status: "NOT_STARTED", dueDate: new Date("2026-05-05") },
+      { title: "Produzir demo IA para pitch de novos clientes", keyResultId: kr3_2.id, companyId: company.id, ownerId: duda.id, status: "NOT_STARTED", dueDate: new Date("2026-05-10") },
+      { title: "Revisão mensal de resultados IA com clientes", keyResultId: kr3_3.id, companyId: company.id, ownerId: pedro.id, status: "NOT_STARTED", dueDate: new Date("2026-06-05") },
+    ],
+  });
+
+  // ── OBJ 4: Custos — Manter em R$110K no Q2 ───────────────────────────────────
+  // Squad: Eficiência SDR + Funil de Vendas
+
+  const obj4 = await prisma.objective.create({
+    data: {
+      title: "Controlar Custos Totais em R$110K no Q2",
+      description: "OKR de Custos — Manter eficiência operacional no trimestre.",
+      cycleId: cycle.id,
+      companyId: company.id,
+      ownerId: igor.id,
+      sortOrder: 4,
+    },
+  });
+
+  const kr4_1 = await prisma.keyResult.create({
+    data: {
+      title: "Custo Abril ≤ R$33K",
+      progressMode: "METRIC_BASED",
+      startValue: 0,
+      currentValue: 31000,
+      targetValue: 33000,
+      unit: "R$",
+      objectiveId: obj4.id,
+      companyId: company.id,
+      ownerId: igor.id,
+      sortOrder: 1,
+    },
+  });
+
+  const kr4_2 = await prisma.keyResult.create({
+    data: {
+      title: "Custo Maio ≤ R$34K",
+      progressMode: "METRIC_BASED",
+      startValue: 0,
+      currentValue: 0,
+      targetValue: 34000,
+      unit: "R$",
+      objectiveId: obj4.id,
+      companyId: company.id,
+      ownerId: igor.id,
+      sortOrder: 2,
+    },
+  });
+
+  const kr4_3 = await prisma.keyResult.create({
+    data: {
+      title: "Custo Junho ≤ R$36K",
+      progressMode: "METRIC_BASED",
+      startValue: 0,
+      currentValue: 0,
+      targetValue: 36000,
+      unit: "R$",
+      objectiveId: obj4.id,
+      companyId: company.id,
+      ownerId: igor.id,
+      sortOrder: 3,
+    },
+  });
+
+  await prisma.action.createMany({
+    data: [
+      { title: "Auditar gastos com ferramentas e cancelar não utilizadas", keyResultId: kr4_1.id, companyId: company.id, ownerId: igor.id, status: "COMPLETED", completedAt: new Date("2026-04-08") },
+      { title: "Negociar contratos de fornecedores para Maio", keyResultId: kr4_2.id, companyId: company.id, ownerId: igor.id, status: "NOT_STARTED", dueDate: new Date("2026-04-28") },
+      { title: "Revisar comissões e estrutura de custos variáveis", keyResultId: kr4_3.id, companyId: company.id, ownerId: igor.id, status: "NOT_STARTED", dueDate: new Date("2026-05-30") },
+    ],
+  });
+
+  // ── OBJ 5: Lucro — Meta R$55K no Q2 ─────────────────────────────────────────
+  // Meta do Tri: Lucro R$55K
+
+  const obj5 = await prisma.objective.create({
+    data: {
+      title: "Gerar Lucro de R$55K no Q2 2026",
+      description: "Meta do Trimestre — Lucro líquido. Abr R$16K | Mai R$18K | Jun R$20K = R$54K.",
+      cycleId: cycle.id,
+      companyId: company.id,
+      ownerId: bernardo.id,
+      sortOrder: 5,
+    },
+  });
+
+  const kr5_1 = await prisma.keyResult.create({
+    data: {
+      title: "Lucro Abril ≥ R$16K",
+      progressMode: "METRIC_BASED",
+      startValue: 0,
+      currentValue: 14000,
+      targetValue: 16000,
+      unit: "R$",
+      objectiveId: obj5.id,
+      companyId: company.id,
+      ownerId: igor.id,
+      sortOrder: 1,
+    },
+  });
+
+  const kr5_2 = await prisma.keyResult.create({
+    data: {
+      title: "Lucro Maio ≥ R$18K",
+      progressMode: "METRIC_BASED",
+      startValue: 0,
+      currentValue: 0,
+      targetValue: 18000,
+      unit: "R$",
+      objectiveId: obj5.id,
+      companyId: company.id,
+      ownerId: igor.id,
+      sortOrder: 2,
+    },
+  });
+
+  const kr5_3 = await prisma.keyResult.create({
+    data: {
+      title: "Lucro Junho ≥ R$20K",
+      progressMode: "METRIC_BASED",
+      startValue: 0,
+      currentValue: 0,
+      targetValue: 20000,
+      unit: "R$",
+      objectiveId: obj5.id,
+      companyId: company.id,
+      ownerId: igor.id,
+      sortOrder: 3,
+    },
+  });
+
+  await prisma.action.createMany({
+    data: [
+      { title: "Fechar DRE de Abril até dia 05/05", keyResultId: kr5_1.id, companyId: company.id, ownerId: igor.id, status: "NOT_STARTED", dueDate: new Date("2026-05-05") },
+      { title: "Apresentar resultado Abril para sócios", keyResultId: kr5_1.id, companyId: company.id, ownerId: bernardo.id, status: "NOT_STARTED", dueDate: new Date("2026-05-07") },
+      { title: "Weekly financeiro toda segunda-feira", keyResultId: kr5_2.id, companyId: company.id, ownerId: igor.id, status: "IN_PROGRESS", dueDate: new Date("2026-05-30") },
+      { title: "Projeção de caixa Junho com base em Maio real", keyResultId: kr5_3.id, companyId: company.id, ownerId: igor.id, status: "NOT_STARTED", dueDate: new Date("2026-06-01") },
+    ],
+  });
+
+  console.log("🎯 OKRs criados: 5 objectives, 15 key results, 20 actions");
   console.log("✅ Seed finalizado com sucesso!");
   console.log("");
-  console.log("   Login: gomesmotta.bernardo@gmail.com / 123456  (SUPER ADMIN)");
-  console.log("   Login: igor@funilfaixapreta.com / 123456       (ADMIN)");
-  console.log("   Slug:  ffp");
+  console.log("   Login SUPER ADMIN : gomesmotta.bernardo@gmail.com / 123456");
+  console.log("   Login ADMIN       : igor@funilfaixapreta.com / 123456");
+  console.log("   Login MEMBER      : duda | francimario | alan | pedro @funilfaixapreta.com / 123456");
+  console.log("   Slug              : ffp");
+  console.log("");
+  console.log("   🏆 Meta do Tri    : Lucro R$55K");
+  console.log("   📈 Fat Q2         : R$165K  (Abr R$51K | Mai R$55K | Jun R$55K)");
+  console.log("   💸 Custo Q2       : R$110K  (Abr R$33K | Mai R$34K | Jun R$36K)");
+  console.log("   🔁 MRR Jun        : R$56K");
+  console.log("   🤖 IA Mai         : R$10K");
 }
 
 main()
