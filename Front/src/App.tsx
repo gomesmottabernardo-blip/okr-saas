@@ -155,7 +155,7 @@ export default function App() {
       {/* ── Content ──────────────────────────────────────── */}
       <main style={{ maxWidth: 980, margin: "0 auto", padding: "32px 24px" }}>
         {tab === "dashboard" && <Dashboard isAdmin={isAdmin} />}
-        {tab === "okrs" && <OkrManager primaryColor={primary} />}
+        {tab === "okrs" && <OkrManager primaryColor={primary} isAdmin={isAdmin} />}
         {tab === "insights" && <Insights isAdmin={isAdmin} />}
         {tab === "settings" && <Settings onSave={handleBrandUpdate} isAdmin={isAdmin} isSuperAdmin={isSuperAdmin} />}
       </main>

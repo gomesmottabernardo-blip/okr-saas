@@ -8,6 +8,7 @@ import { companyRouter } from "../routers/company.router"
 import { insightsRouter } from "../routers/insights.router"
 import { alertsRouter } from "../routers/alerts.router"
 import { settingsRouter } from "../routers/settings.router"
+import { syncRouter } from "../routers/sync.router"
 
 export const appRouter = router({
   auth: authRouter,
@@ -19,6 +20,7 @@ export const appRouter = router({
   insights: insightsRouter,
   alerts: alertsRouter,
   settings: settingsRouter,
+  sync: syncRouter,
 })
 
 export type AppRouter = typeof appRouter

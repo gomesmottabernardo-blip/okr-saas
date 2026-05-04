@@ -283,3 +283,13 @@ export async function validateSetupToken(token: string) {
 export async function setupPassword(token: string, password: string) {
   return trpcMutation("auth.setupPassword", { token, password })
 }
+
+// ── Notion Sync ───────────────────────────────────────────────────────────────
+
+export async function triggerNotionSync() {
+  return trpcMutation("sync.triggerNotion", {})
+}
+
+export async function fetchSyncLogs() {
+  return trpcQuery("sync.logs")
+}

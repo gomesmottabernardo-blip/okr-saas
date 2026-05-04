@@ -14,3 +14,7 @@ services:
         sync: false   # definir manualmente no painel do Render
       - key: ALLOWED_ORIGINS
         sync: false   # definir com a URL da Vercel após o deploy do frontend
+      - key: NOTION_TOKEN
+        sync: false   # token de integração do Notion
+      - key: NOTION_DATABASE_ID
+        sync: false   # ID do banco de tarefas: f5c1b06e-61d1-4f83-b588-f868d0fc982f

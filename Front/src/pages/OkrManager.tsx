@@ -5,6 +5,7 @@ import {
   createObjective, deleteObjective,
   createKeyResult, deleteKeyResult,
   createAction, deleteAction,
+  triggerNotionSync,
 } from "../services/api"
 
 type ViewMode = "tree" | "filter"
@@ -23,9 +24,9 @@ interface AnalysisItem {
   krTitle?: string
 }
 
-interface Props { primaryColor?: string }
+interface Props { primaryColor?: string; isAdmin?: boolean }
 
-export default function OkrManager({ primaryColor = "#6366f1" }: Props) {
+export default function OkrManager({ primaryColor = "#6366f1", isAdmin = false }: Props) {
   const [cycles, setCycles] = useState<any[]>([])
   const [selectedCycle, setSelectedCycle] = useState<string>("")
   const [objectives, setObjectives] = useState<any[]>([])
@@ -39,6 +40,8 @@ export default function OkrManager({ primaryColor = "#6366f1" }: Props) {
   const [filterObjectives, setFilterObjectives] = useState<string[]>([])
   const [filterKRs, setFilterKRs] = useState<string[]>([])
   const [showAnalysis, setShowAnalysis] = useState(false)
+  const [syncing, setSyncing] = useState(false)
+  const [syncMsg, setSyncMsg] = useState<string | null>(null)
 
   useEffect(() => { loadCycles(); loadUsers() }, [])
   useEffect(() => { if (selectedCycle) { loadObjectives(); loadAlerts() } }, [selectedCycle])
@@ -104,6 +107,20 @@ export default function OkrManager({ primaryColor = "#6366f1" }: Props) {
   async function refresh() {
     await loadObjectives()
     await loadAlerts()
+  }
+
+  async function handleNotionSync() {
+    setSyncing(true)
+    setSyncMsg(null)
+    try {
+      const result = await triggerNotionSync()
+      setSyncMsg(`Sync concluído: ${result.created} criadas, ${result.updated} atualizadas, ${result.failed} falhas`)
+      await refresh()
+    } catch (err: any) {
+      setSyncMsg(`Erro no sync: ${err.message || "erro desconhecido"}`)
+    } finally {
+      setSyncing(false)
+    }
   }
 
   const allKROptions = useMemo(() => {
@@ -209,6 +226,32 @@ export default function OkrManager({ primaryColor = "#6366f1" }: Props) {
               >
                 🧠 Analisar prioridades
               </button>
+            )}
+
+            {/* Botão Notion Sync — admin only */}
+            {isAdmin && (
+              <button
+                onClick={handleNotionSync}
+                disabled={syncing}
+                style={{
+                  padding: "6px 14px", borderRadius: 7, border: "none",
+                  background: syncing ? "#d1d5db" : "#000000",
+                  color: syncing ? "#6b7280" : "white",
+                  fontSize: 12, fontWeight: 700,
+                  cursor: syncing ? "not-allowed" : "pointer",
+                  display: "flex", alignItems: "center", gap: 5, whiteSpace: "nowrap",
+                  opacity: syncing ? 0.7 : 1,
+                }}
+              >
+                {syncing ? "Sincronizando..." : "🔄 Sincronizar com Notion"}
+              </button>
+            )}
+
+            {/* Mensagem de resultado do sync */}
+            {syncMsg && (
+              <span style={{ fontSize: 12, color: syncMsg.startsWith("Erro") ? "#dc2626" : "#16a34a" }}>
+                {syncMsg}
+              </span>
             )}
 
             <button onClick={() => setShowNewObj(!showNewObj)} style={{ ...btnSmall, marginLeft: "auto" }}>
